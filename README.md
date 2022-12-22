@@ -35,17 +35,17 @@ Used to modify osmosis sources to include hability tu run as a launcher.
 #### Run as launcher :
 In this case osmosisd will start and wait fo entry in stdIn
 ```console
-osmosisd-launcher --launcher
+osmosisd --launcher
 ```
 #### Run as launcher but passing other commands now :
 In this case osmosisd will start and immediately run commands other commands
 ```console
-osmosisd-launcher --launcher optionnalArg1 optionnalArg2 ...
+osmosisd --launcher optionnalArg1 optionnalArg2 ...
 ```
 
 It similare to :
 ```console
-osmosisd-launcher optionnalArg1 optionnalArg2 ...
+osmosisd optionnalArg1 optionnalArg2 ...
 ```
 
 ## launcher.go
