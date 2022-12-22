@@ -43,18 +43,18 @@ echo -e "$mainGoFile" > $mainFilePath
 echo "Building osmosis"
 if make build -C osmosis
 then
-
-    if [[ -f $osmosisd-launcher ]]
+    targetOsmosisdFile=osmosisd
+    if [[ -f $targetOsmosisdFile ]]
     then
-        echo "Removinf $osmosisd-launcher"
-        rm $osmosisd-launcher
+        echo "Removing $targetOsmosisdFile"
+        rm $targetOsmosisdFile
     fi
 
     # Copy generated binary
-    cp osmosis/build/osmosisd osmosisd-launcher
+    cp osmosis/build/osmosisd $targetOsmosisdFile
 
     # Show version
-    if ./osmosisd-launcher --launcher version
+    if ./$targetOsmosisdFile --launcher version
     then
         echo "It works !!"
     else
