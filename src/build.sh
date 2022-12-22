@@ -2,7 +2,7 @@
 
 version="v12.3.0"
 
-if ! ./osmosis.clone.sh $version
+if ! ./clone.sh $version
 then
     echo "Cannot build osmosis-launcher"
     exit 1
