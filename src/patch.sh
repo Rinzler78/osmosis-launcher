@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="v12.3.0"
+version=$1
 
 if ! ./clone.sh $version
 then
@@ -38,32 +38,3 @@ mainGoFile="${mainGoFile/$rootCmdLine/$newCodeLine}"
 
 # Write new code
 echo -e "$mainGoFile" > $mainFilePath
-
-# Build osmosisd
-echo "Building osmosis"
-if make build -C osmosis
-then
-    targetOsmosisdFile=osmosisd
-    if [[ -f $targetOsmosisdFile ]]
-    then
-        echo "Removing $targetOsmosisdFile"
-        rm $targetOsmosisdFile
-    fi
-
-    # Copy generated binary
-    cp osmosis/build/osmosisd $targetOsmosisdFile
-
-    # Show version
-    if ./$targetOsmosisdFile --launcher version
-    then
-        echo "It works !!"
-    else
-        echo "Seems does not work"
-        exit 1
-    fi
-else
-    echo "Build failed"
-    exit 1
-fi
-
-rm -rf osmosis

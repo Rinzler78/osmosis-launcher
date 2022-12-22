@@ -2,10 +2,10 @@
 Osmosis launcher is an improvement of osmosis that allow osmosisd to run as a launcher adn receive commands later.
 
 # Quick start
-## Build
-Call build.sh in src directory
+## Make
+Call make.sh in src directory
 ```console
-./build.sh
+./make.sh
 ```
 ## Use
 Call osmosid with "--launcher" argument :
@@ -17,15 +17,15 @@ And write command to execute.
 Exemple : version
 
 # Steps
-## Clone source
+## Clone
 Clone source from official github repository :
 https://github.com/osmosis-labs/osmosis.git
-## Modify code
-Modify original cmd/osmosisd/main.go file to insert launcher code
+## Patch
+Patch original cmd/osmosisd/main.go file to insert launcher code
 https://github.com/osmosis-labs/osmosis/blob/main/cmd/osmosisd/main.go
-## Build
-Build the source using official
-https://docs.osmosis.zone/osmosis-core/build
+## Make
+Make the source using official
+https://docs.osmosis.zone/osmosis-core/make
 # Scripts
 ## clone.sh
 ### Description
@@ -43,9 +43,21 @@ clone.sh v12.3.0
 git
 git-lfs
 go  
-## build.sh
+
+## patch.sh
 ### Description
-Used to modify osmosis sources to include hability tu run as a launcher.
+Used to patch osmosis sources to include hability tu run as a launcher.
+### Usage
+```console
+patch.sh tag
+```
+Exemple :
+```console
+patch.sh v12.3.0
+```
+## make.sh
+### Description
+Used to make osmosis sources
 ### Usage
 #### Run as launcher :
 In this case osmosisd will start and wait fo entry in stdIn

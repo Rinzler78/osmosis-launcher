@@ -30,9 +30,9 @@ func wait_for_launcher() {
 				os.Exit(1)
 			}
 
-			var serverArgs = strings.Fields(line)
+			var launcherArgs = strings.Fields(line)
 
-			os.Args = append(os.Args[:len(os.Args)-1], serverArgs...)
+			os.Args = append(os.Args, launcherArgs...)
 		}
 	}
 }
