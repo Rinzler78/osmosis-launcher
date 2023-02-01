@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=$1
+version=$(./version.resolve.sh $1)
 
 if ! ./clone.sh $version
 then

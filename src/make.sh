@@ -1,6 +1,12 @@
 #!/bin/bash
 
-version="v12.3.0"
+version=$(./version.resolve.sh $1)
+
+if ! ./go.install.sh $version
+then
+    echo "goland installation failed"
+    exit
+fi
 
 if ! ./patch.sh $version
 then

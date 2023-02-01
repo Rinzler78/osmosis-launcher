@@ -1,14 +1,8 @@
 #!/bin/bash
 
 gitHubRepoUrl="https://github.com/osmosis-labs/osmosis.git"
-version=$1
+version=$(./version.resolve.sh $1)
 targetFolder="osmosis"
-
-if [[ -z $version ]]
-then
-    echo "No version set."
-    version="main"
-fi
 
 if ! command -v git &> /dev/null
 then
