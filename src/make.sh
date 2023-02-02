@@ -14,6 +14,11 @@ then
     exit 1
 fi
 
+if ! command -v make &> /dev/null
+then
+    sudo apt-get install -y build-essential
+fi
+
 # Build osmosisd
 echo "Building osmosis"
 if make build -C osmosis
