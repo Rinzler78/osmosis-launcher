@@ -12,6 +12,10 @@ elif [ "$osmosis_version" == "v14.0.0" ];
 then
     echo "go1.19"
     exit 0
+elif [ "$osmosis_version" == "v15.1.0" ];
+then
+    echo "go1.19"
+    exit 0
 fi
 
 exit 1

@@ -2,9 +2,9 @@
 
 version=$1
 
-if [ "$version" != "v12.3.0" ] && [ "$version" != "v14.0.0" ];
+if [ "$version" != "v15.1.0" ];
 then
-    version="v12.3.0"
+    version="v15.1.0"
 fi
 
 echo $version

@@ -10,11 +10,11 @@ then
     tar_file="$requiered_goland_version.$(echo "$(uname)" | tr '[:upper:]' '[:lower:]')-amd64.tar.gz"
     wget "https://go.dev/dl/$tar_file"
     tar -zxf "$tar_file"
-    sudo rm -rf /usr/local/go ~/go ~/.go
+    sudo rm -rf /usr/local/go ~/.go
     sudo mv go /usr/local/
     rm $tar_file
 
-    mkdir ~/go ~/.go
+    mkdir ~/.go
 fi
 
 installed_goland_version=$(go version | cut -d " " -f 3)
