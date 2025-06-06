@@ -1,0 +1,35 @@
+name: Release on tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  test-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up bash and dependencies
+        run: sudo apt-get update && sudo apt-get install -y git
+
+      - name: Run all test scripts
+        run: |
+          chmod +x tests/*.sh
+          for test in tests/*.sh; do
+            echo "[INFO] Running $test"
+            bash "$test"
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Automated release for tag ${{ github.ref_name }}.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
