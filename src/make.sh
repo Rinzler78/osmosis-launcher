@@ -1,49 +1,53 @@
 #!/bin/bash
 
-version=$(./version.resolve.sh $1)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TARGET_DIR="osmosis"
+TAG=$1
 
-if ! ./go.install.sh $version
-then
-    echo "goland installation failed"
-    exit 1
+# Si TAG n'est pas défini, on prend le dernier tag
+if [ -z "$TAG" ]; then
+  TAG="$("$SCRIPT_DIR/last_tag.sh")"
+  echo "[INFO] No tag provided, using last tag: $TAG"
+else
+  # Vérifie que le tag existe
+  if ! "$SCRIPT_DIR/tags.sh" | grep -Fxq "$TAG"; then
+    echo "[ERROR] Tag $TAG does not exist in Osmosis repo."
+    exit 3
+  fi
 fi
 
-if ! ./patch.sh $version
+# Clone the repo
+if ! "$SCRIPT_DIR/clone.sh" "$TAG" "$TARGET_DIR"; then
+  echo "Cannot clone the repo"
+  exit 1
+fi
+
+# Patch the repo
+if ! "$SCRIPT_DIR/patch.sh" "$TARGET_DIR"
 then
     echo "Cannot build osmosis-launcher"
     exit 1
 fi
 
-if ! command -v make &> /dev/null
+# Build
+if ! "$SCRIPT_DIR/build.sh" "$TARGET_DIR"
 then
-    sudo apt-get install -y build-essential
-fi
-
-# Build osmosisd
-echo "Building osmosis"
-if make build -C osmosis
-then
-    targetOsmosisdFile=osmosisd
-    if [[ -f $targetOsmosisdFile ]]
-    then
-        echo "Removing $targetOsmosisdFile"
-        rm $targetOsmosisdFile
-    fi
-
-    # Copy generated binary
-    cp osmosis/build/osmosisd $targetOsmosisdFile
-
-    # Show version
-    if ./$targetOsmosisdFile --launcher version
-    then
-        echo "It works !!"
-    else
-        echo "Seems does not work"
-        exit 1
-    fi
-else
-    echo "Build failed"
+    echo "Cannot build osmosis-launcher"
     exit 1
 fi
 
-rm -rf osmosis
+# Compare versions
+# Vérification de la version du binaire
+OSMOSISD_VERSION_OUTPUT=$("./osmosisd" version 2>/dev/null | head -n 1)
+if [ "$OSMOSISD_VERSION_OUTPUT" != "${TAG#v}" ]; then
+  echo "[FAIL] Built osmosisd version ($OSMOSISD_VERSION_OUTPUT) does not match requested version (${TAG#v})."
+  exit 1
+else
+  echo "[OK] osmosisd version check passed: $OSMOSISD_VERSION_OUTPUT"
+fi
+
+# Nettoyage automatique du dossier cloné à la fin
+cleanup() {
+  rm -rf "$TARGET_DIR"
+}
+trap cleanup EXIT 

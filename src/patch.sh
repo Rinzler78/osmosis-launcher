@@ -1,14 +1,16 @@
 #!/bin/bash
 
-version=$(./version.resolve.sh $1)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TARGET_DIR="$1"
+LAUNCHER_GO_SRC="$SCRIPT_DIR/launcher.go"
 
-if ! ./clone.sh $version
-then
-    echo "Cannot build osmosis-launcher"
+# Check if TARGET_DIR exists
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "[FAIL] Target directory $TARGET_DIR does not exist."
     exit 1
 fi
 
-mainFilePath="osmosis/cmd/osmosisd/main.go"
+mainFilePath="$TARGET_DIR/cmd/osmosisd/main.go"
 mainFileBaseDirectory=${mainFilePath%/*}
 
 if ! [[ -f $mainFilePath ]]
@@ -28,7 +30,7 @@ then
 fi
 
 # Copy launcher go file to cmd/osmosisd directory
-cp $launcherGoFilePath $targetLauncherGoFile
+cp "$LAUNCHER_GO_SRC" "$TARGET_DIR/cmd/osmosisd/"
 
 ## Insert wait for launcher function
 rootCmdLine="cmd.NewRootCmd()"
