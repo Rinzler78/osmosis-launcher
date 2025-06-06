@@ -1,81 +1,95 @@
-# Osmosis launcher
-Osmosis launcher is an improvement of osmosis that allow osmosisd to run as a launcher adn receive commands later.
+# Osmosis Launcher
 
-# Quick start
-## Make
-Call make.sh in src directory
-```console
-./make.sh
-```
-## Use
-Call osmosid with "--launcher" argument :
-```console
-./osmosid --launcher
-```
+[![Build](https://github.com/<your-user>/<your-repo>/actions/workflows/release.yml/badge.svg)](https://github.com/<your-user>/<your-repo>/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![made-with-bash](https://img.shields.io/badge/-Made%20with%20Bash-1f425f.svg?logo=gnu-bash)](https://www.gnu.org/software/bash/)
+[![Latest Release](https://img.shields.io/github/v/tag/<your-user>/<your-repo>)](https://github.com/<your-user>/<your-repo>/releases)
 
-And write command to execute.
-Exemple : version
+---
 
-# Steps
-## Clone
-Clone source from official github repository :
-https://github.com/osmosis-labs/osmosis.git
-## Patch
-Patch original cmd/osmosisd/main.go file to insert launcher code
-https://github.com/osmosis-labs/osmosis/blob/main/cmd/osmosisd/main.go
-## Make
-Make the source using official
-https://docs.osmosis.zone/osmosis-core/make
-# Scripts
-## clone.sh
-### Description
-Used to clone osmosis, from official github repository, in osmosis directory
+Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmosis) that allows you to run `osmosisd` in "launcher" mode and send commands dynamically via stdin. This project makes scripting, automation, and integration of osmosisd into complex workflows much easier.
 
-### Usage
-```console
-clone.sh tag
-```
-Exemple :
-```console
-clone.sh v12.3.0
-```
-### Dependencies
-git
-git-lfs
-go  
+## Table of Contents
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Scripts Details](#scripts-details)
+- [Contributing](#contributing)
+- [License](#license)
 
-## patch.sh
-### Description
-Used to patch osmosis sources to include hability tu run as a launcher.
-### Usage
-```console
-patch.sh tag
+## Features
+- Launch `osmosisd` in "launcher" mode (waits for commands on stdin)
+- Dynamically inject commands after startup
+- Automation scripts to clone, patch, and build Osmosis
+- Automated tests for each key step
+
+## Requirements
+- [git](https://git-scm.com/)
+- [git-lfs](https://git-lfs.github.com/)
+- [go](https://go.dev/) (required version: see Osmosis repo go.mod)
+- bash (>= 4)
+
+## Installation
+1. **Clone the project**
+   ```console
+git clone https://github.com/<your-user>/<your-repo>.git
+cd osmosis-launcher
 ```
-Exemple :
-```console
-patch.sh v12.3.0
+2. **Clone Osmosis sources**
+   ```console
+src/clone.sh <tag>
+# Example: src/clone.sh v12.3.0
 ```
-## make.sh
-### Description
-Used to make osmosis sources
-### Usage
-#### Run as launcher :
-In this case osmosisd will start and wait fo entry in stdIn
-```console
-osmosisd --launcher
+3. **Apply the launcher patch**
+   ```console
+src/patch.sh <tag>
+# Example: src/patch.sh v12.3.0
 ```
-#### Run as launcher but passing other commands now :
-In this case osmosisd will start and immediately run commands other commands
-```console
-osmosisd --launcher optionnalArg1 optionnalArg2 ...
+4. **Build Osmosis with the launcher**
+   ```console
+src/make.sh <tag>
+# Example: src/make.sh v12.3.0
 ```
 
-It similare to :
+## Quick Start
+Launch osmosisd in launcher mode:
 ```console
-osmosisd optionnalArg1 optionnalArg2 ...
+./osmosisd --launcher
+```
+You can then write commands to execute (example: `version`).
+
+Launch osmosisd in launcher mode with arguments:
+```console
+./osmosisd --launcher optionalArg1 optionalArg2 ...
+```
+This is equivalent to:
+```console
+./osmosisd optionalArg1 optionalArg2 ...
 ```
 
-## launcher.go
-### Description
-Contains code allowing osmosisd to catch "--launcher" command line argument.
+## Scripts Details
+- **src/clone.sh**: Clone the Osmosis repo at a given tag into the `osmosis` folder.
+- **src/patch.sh**: Apply the patch to enable launcher mode in osmosisd.
+- **src/make.sh**: Build the modified Osmosis sources.
+- **src/build.sh**: Advanced build for different environments.
+- **src/tags.sh**: List available tags from the Osmosis repo.
+- **src/last_tag.sh**: Show the latest available tag.
+- **src/retrieve_required_go_version.sh**: Retrieve the required Go version from Osmosis's go.mod.
+- **src/launcher.go**: Source code for the launcher mode injected into osmosisd.
+
+Test scripts are available in the `tests/` folder to validate each step.
+
+## Contributing
+Contributions are welcome! Please:
+- Respect the script structure and naming conventions
+- Document your additions
+- Add tests if possible
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file.
+
+---
+
+> Console messages and comments are in English to ensure international compatibility of logs and scripts.
 
