@@ -42,11 +42,11 @@ fi
 
 # Clone la branche principale puis checkout le tag
 echo "[INFO] Cloning Osmosis repo to $TARGET_DIR"
-GIT_LFS_SKIP_SMUDGE=1 git clone --branch "$DEFAULT_BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR"
+GIT_LFS_SKIP_SMUDGE=1 git clone --branch "$DEFAULT_BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR" > /dev/null 2>&1
 cd "$TARGET_DIR"
 echo "[INFO] Fetching tags and checking out tag $TAG"
-GIT_LFS_SKIP_SMUDGE=1 git fetch --all --tags
-git checkout "$TAG"
+GIT_LFS_SKIP_SMUDGE=1 git fetch --all --tags > /dev/null 2>&1
+git checkout "$TAG" > /dev/null 2>&1
 cd - > /dev/null
 
 if [ -d "$TARGET_DIR" ]; then

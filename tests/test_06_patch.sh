@@ -70,11 +70,14 @@ if bash "$PATCH_SH" "/tmp/does_not_exist_$$" 2>err.log; then
   echo "[FAIL] patch.sh did not fail with non-existent directory."
   exit 1
 fi
-if ! grep -q "does not exist" err.log && ! grep -q "No such file or directory" err.log && ! grep -q "Target directory" err.log; then
+ERROR_MSG1="[FAIL] Impossible de déterminer la version de Go pour le dossier"
+ERROR_MSG2="[FAIL] Target directory"
+if grep -q "$ERROR_MSG1" err.log || grep -q "$ERROR_MSG2" err.log; then
+  echo "[OK] Error message found for non-existent directory."
+else
   echo "[FAIL] Error message not found for non-existent directory."
   exit 1
 fi
-echo "[OK] patch.sh fails as expected with non-existent directory."
 
 # 9. Error: main.go missing
 BROKEN_DIR="$ROOT_DIR/test_patch_broken"
