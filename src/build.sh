@@ -3,6 +3,10 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET_DIR="$1"
+if [ ! -d "$TARGET_DIR" ]; then
+  echo "[FAIL] Directory $TARGET_DIR does not exist."
+  exit 1
+fi
 BUILD_DIR="."
 GO_VERSION_SH="$SCRIPT_DIR/retrieve_required_go_version.sh"
 

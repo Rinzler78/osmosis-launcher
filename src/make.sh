@@ -11,7 +11,7 @@ if [ -z "$TAG" ]; then
 else
   # Vérifie que le tag existe
   if ! "$SCRIPT_DIR/tags.sh" | grep -Fxq "$TAG"; then
-    echo "[ERROR] Tag $TAG does not exist in Osmosis repo."
+    echo "[ERROR] The specified tag '$TAG' was not found in the Osmosis repository. Use './src/tags.sh' to list available tags."
     exit 3
   fi
 fi

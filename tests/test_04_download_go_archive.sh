@@ -1,7 +1,20 @@
 #!/bin/bash
 set -e
 
-# Principales combinaisons OS/ARCH/EXT (10 max)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
+
+echo_title() {
+  bash $FORMAT_TITLE_SH "$(basename "$0")"
+}
+
+echo_title
+
+echo "[INFO] Test downloading Go archive"
+
+trap 'echo_title' EXIT
+
+# Main OS/ARCH/EXT combinations (max 10)
 PLATFORMS=(
   "linux amd64 tar.gz"
   "linux arm64 tar.gz"
@@ -22,10 +35,11 @@ for entry in "${PLATFORMS[@]}"; do
   GO_ARCH=$2
   EXT=$3
   SCRIPT_PATH="$(dirname "$0")/../src/download_go_archive.sh"
+  echo "[INFO] Testing $GO_VERSION $GO_OS $GO_ARCH"
   ARCHIVE_PATH=$($SCRIPT_PATH "$GO_VERSION" "$GO_OS" "$GO_ARCH" | tail -n1)
-  # Vérifier l'extension attendue
+  # Check the expected extension
   if [[ "$ARCHIVE_PATH" != *.$EXT ]]; then
-    echo "[TEST FAIL] $GO_VERSION $GO_OS $GO_ARCH: Mauvaise extension ($ARCHIVE_PATH, attendu: $EXT)"
+    echo "[TEST FAIL] $GO_VERSION $GO_OS $GO_ARCH: Wrong extension ($ARCHIVE_PATH, expected: $EXT)"
     FAIL=$((FAIL+1))
     continue
   fi
@@ -39,7 +53,7 @@ for entry in "${PLATFORMS[@]}"; do
   fi
 done
 
-echo "\nRésumé : $SUCCESS succès, $FAIL échecs."
+echo "[INFO] Summary: $SUCCESS success, $FAIL failures."
 if [ "$FAIL" -gt 0 ]; then
   exit 1
 fi 

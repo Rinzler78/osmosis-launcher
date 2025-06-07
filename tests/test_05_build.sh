@@ -4,19 +4,29 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.."
-BUILD_SH="$ROOT_DIR/src/build.sh"
-CLONE_SH="$ROOT_DIR/src/clone.sh"
-PATCH_SH="$ROOT_DIR/src/patch.sh"
-LAST_TAG_SH="$ROOT_DIR/src/last_tag.sh"
-GO_VERSION_SH="$ROOT_DIR/src/retrieve_required_go_version.sh"
+ROOT_DIR="$SCRIPT_DIR/.tmp"
+BUILD_SH="$SCRIPT_DIR/../src/build.sh"
+CLONE_SH="$SCRIPT_DIR/../src/clone.sh"
+PATCH_SH="$SCRIPT_DIR/../src/patch.sh"
+LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
+GO_VERSION_SH="$SCRIPT_DIR/../src/retrieve_required_go_version.sh"
+
+FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
+echo_title() {
+  bash $FORMAT_TITLE_SH "$(basename "$0")"
+}
 
 # Clean up on exit
 cleanup() {
   rm -rf "$ROOT_DIR/test_build"
   rm -f osmosisd
 }
-trap cleanup EXIT
+
+echo_title
+
+echo "[INFO] Test building osmosisd"
+
+trap 'echo_title; cleanup' EXIT
 
 # Clean initial state
 rm -rf "$ROOT_DIR/test_build"
@@ -53,15 +63,14 @@ fi
 echo "[OK] osmosisd version matches tag: $OSMOSISD_VERSION_OUTPUT"
 
 # 4. Check that build.sh fails if directory does not exist
-if bash "$BUILD_SH" "/tmp/does_not_exist_$$" 2>err.log; then
+if bash "$BUILD_SH" "/tmp/does_not_exist_$$"; then
   echo "[FAIL] build.sh did not fail with non-existent directory."
   exit 1
 fi
-if ! grep -q "No such file or directory" err.log && ! grep -q "does not exist" err.log; then
+if ! bash "$BUILD_SH" "/tmp/does_not_exist_$$" 2>&1 | grep -q "No such file or directory" && ! bash "$BUILD_SH" "/tmp/does_not_exist_$$" 2>&1 | grep -q "does not exist"; then
   echo "[FAIL] Error message not found for non-existent directory."
   exit 1
 fi
-rm -f err.log
 
 echo "[OK] build.sh fails as expected with non-existent directory."
 

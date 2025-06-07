@@ -1,20 +1,33 @@
 #!/bin/bash
 
-# Teste le script last_tag.sh pour s'assurer qu'il retourne le dernier tag valide du repo Osmosis
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
-OUTPUT=$(bash src/last_tag.sh)
+echo_title() {
+  bash $FORMAT_TITLE_SH "$(basename "$0")"
+}
 
-# Vérifie que la sortie n'est pas vide
-if [ -z "$OUTPUT" ]; then
+trap echo_title EXIT
+
+echo_title
+
+echo "[INFO] Test retrieving last tag"
+
+LAST_TAG_OUTPUT=$(bash $SCRIPT_DIR/../src/last_tag.sh)
+TAGS_OUTPUT=$(bash $SCRIPT_DIR/../src/tags.sh)
+LAST_TAG_FROM_TAGS=$(echo "$TAGS_OUTPUT" | tail -n 1)
+
+# Check that both outputs are not empty
+if [ -z "$LAST_TAG_OUTPUT" ] || [ -z "$LAST_TAG_FROM_TAGS" ]; then
   echo "[FAIL] No tag found."
   exit 1
 fi
 
-# Vérifie que la sortie ressemble à un tag de version (ex: 1.2.3 ou v1.2.3)
-if [[ "$OUTPUT" =~ ^v?[0-9]+(\.[0-9]+)*$ ]]; then
-  echo "[OK] Found last tag: $OUTPUT"
+# Check that both outputs are identical
+if [ "$LAST_TAG_OUTPUT" = "$LAST_TAG_FROM_TAGS" ]; then
+  echo "[OK] last_tag.sh and tags.sh outputs match: $LAST_TAG_OUTPUT"
   exit 0
 else
-  echo "[FAIL] Invalid tag format: $OUTPUT"
+  echo "[FAIL] Outputs do not match: last_tag.sh='$LAST_TAG_OUTPUT', tags.sh='$LAST_TAG_FROM_TAGS'"
   exit 1
 fi 

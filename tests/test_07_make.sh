@@ -4,16 +4,27 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.."
-MAKE_SH="$ROOT_DIR/src/make.sh"
-LAST_TAG_SH="$ROOT_DIR/src/last_tag.sh"
-TAGS_SH="$ROOT_DIR/src/tags.sh"
+ROOT_DIR="$SCRIPT_DIR/.tmp"
+MAKE_SH="$SCRIPT_DIR/../src/make.sh"
+LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
+TAGS_SH="$SCRIPT_DIR/../src/tags.sh"
 
+FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
+echo_title() {
+  bash $FORMAT_TITLE_SH "$(basename "$0")"
+}
+
+# Clean up on exit
 cleanup() {
-  rm -rf "$ROOT_DIR/osmosis"
+  rm -rf "$ROOT_DIR/test_make"
   rm -f osmosisd
 }
-trap cleanup EXIT
+
+echo_title
+
+echo "[INFO] Test make"
+
+trap 'echo_title; cleanup' EXIT
 
 # 1. Build with no tag (should use last tag)
 cleanup
@@ -63,11 +74,11 @@ fi
 cleanup
 NON_EXISTENT_TAG="v0.0.0-NOTAG"
 echo "[INFO] Building with non-existent tag $NON_EXISTENT_TAG (should fail)"
-if bash "$MAKE_SH" "$NON_EXISTENT_TAG" >err.log 2>&1; then
+if bash "$MAKE_SH" "$NON_EXISTENT_TAG"; then
   echo "[FAIL] make.sh did not fail with non-existent tag."
   exit 1
 fi
-if ! grep -q "does not exist" err.log && ! grep -q "No such file or directory" err.log && ! grep -q "ERROR" err.log; then
+if ! bash "$MAKE_SH" "$NON_EXISTENT_TAG" 2>&1 | grep -q "does not exist" && ! bash "$MAKE_SH" "$NON_EXISTENT_TAG" 2>&1 | grep -q "No such file or directory" && ! bash "$MAKE_SH" "$NON_EXISTENT_TAG" 2>&1 | grep -q "ERROR"; then
   echo "[FAIL] Error message not found for non-existent tag."
   exit 1
 fi

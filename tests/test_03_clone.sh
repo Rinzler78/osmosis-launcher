@@ -4,20 +4,28 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.."
-CLONE_SH="$ROOT_DIR/src/clone.sh"
-LAST_TAG="$($ROOT_DIR/src/last_tag.sh)"
+ROOT_DIR="$SCRIPT_DIR/.tmp"
+CLONE_SH="$SCRIPT_DIR/../src/clone.sh"
+LAST_TAG="$($SCRIPT_DIR/../src/last_tag.sh)"
 
-# Nettoyage à la sortie
-cleanup() {
-  rm -rf "$ROOT_DIR/.tmp"
+FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
+
+echo_title() {
+  bash $FORMAT_TITLE_SH "$(basename "$0")"
 }
-trap cleanup EXIT
 
-# Nettoyage initial
-rm -rf "$ROOT_DIR/.tmp"
+cleanup() {
+  rm -rf "$ROOT_DIR"
+  rm -rf "osmosis"
+}
 
-# 1. Test avec tag et dossier
+echo_title
+
+echo "[INFO] Test cloning"
+
+trap 'echo_title; cleanup' EXIT
+
+# 1. Test with tag and directory
 TEST_DIR1="$ROOT_DIR/test1"
 TAG1="$LAST_TAG"
 "$CLONE_SH" "$TAG1" "$TEST_DIR1"
@@ -33,7 +41,7 @@ fi
 
 echo "[OK] Test 1: Clone with tag and dir => OK"
 
-# 2. Test sans tag (doit prendre le dernier tag)
+# 2. Test without tag (should take the last tag)
 TEST_DIR2="$ROOT_DIR/test2"
 "$CLONE_SH" "" "$TEST_DIR2"
 if [ ! -d "$TEST_DIR2/.git" ]; then
@@ -47,8 +55,8 @@ fi
 
 echo "[OK] Test 2: Clone with no tag => OK"
 
-# 3. Test sans dossier (doit cloner dans osmosis)
-DEFAULT_DIR="$ROOT_DIR/osmosis"
+# 3. Test without directory (should clone in osmosis)
+DEFAULT_DIR="osmosis"
 rm -rf "$DEFAULT_DIR"
 "$CLONE_SH" "$LAST_TAG"
 if [ ! -d "$DEFAULT_DIR/.git" ]; then
@@ -62,7 +70,7 @@ fi
 
 echo "[OK] Test 3: Clone with no dir => OK"
 
-# 4. Test sans aucun argument (doit cloner le dernier tag dans osmosis)
+# 4. Test without any argument (should clone the last tag in osmosis)
 rm -rf "$DEFAULT_DIR"
 "$CLONE_SH"
 if [ ! -d "$DEFAULT_DIR/.git" ]; then
@@ -76,18 +84,16 @@ fi
 
 echo "[OK] Test 4: Clone with no args => OK"
 
-# 5. Test avec un tag inexistant (doit échouer)
+# 5. Test with an invalid tag (should fail)
 INVALID_TAG="v0.0.0-THIS-TAG-DOES-NOT-EXIST"
-if "$CLONE_SH" "$INVALID_TAG" "$ROOT_DIR/should_not_exist" 2>err.log; then
+OUTPUT=$("$CLONE_SH" "$INVALID_TAG" "$ROOT_DIR/should_not_exist" 2>&1) && {
   echo "[ERROR] Test 5: Script did not fail with invalid tag"
   exit 1
-fi
-if ! grep -q "does not exist in Osmosis repo." err.log; then
+}
+echo "$OUTPUT" | grep -q "does not exist in Osmosis repo." || {
   echo "[ERROR] Test 5: Error message not found for invalid tag"
   exit 1
-fi
-rm -f err.log
-
+}
 echo "[OK] Test 5: Invalid tag is properly rejected => OK"
 
 echo "[ALL TESTS PASSED]" 
