@@ -90,7 +90,7 @@ OUTPUT=$("$CLONE_SH" "$INVALID_TAG" "$ROOT_DIR/should_not_exist" 2>&1) && {
   echo "[ERROR] Test 5: Script did not fail with invalid tag"
   exit 1
 }
-echo "$OUTPUT" | grep -q "does not exist in Osmosis repo." || {
+echo "$OUTPUT" | grep -q "was not found in the Osmosis repository." || {
   echo "[ERROR] Test 5: Error message not found for invalid tag"
   exit 1
 }
