@@ -35,6 +35,11 @@ if [ -d "$TARGET_DIR/.git" ]; then
     echo "[ERROR] Remote 'origin' URL ($ORIGIN_URL) does not match expected ($REPO_URL)."
     exit 1
   fi
+  CURRENT_REF=$(git symbolic-ref --short -q HEAD || git describe --tags --exact-match 2>/dev/null)
+  if [ "$CURRENT_REF" = "$TAG" ]; then
+    echo "[INFO] Already on tag/branch $TAG. Exiting."
+    exit 0
+  fi
   GIT_LFS_SKIP_SMUDGE=1 git fetch --all --tags
   git checkout "$TAG"
   exit 0
