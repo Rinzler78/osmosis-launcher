@@ -1,9 +1,9 @@
 # Osmosis Launcher
 
-[![Build](https://github.com/<your-user>/<your-repo>/actions/workflows/release.yml/badge.svg)](https://github.com/<your-user>/<your-repo>/actions)
+[![Build](https://github.com/Rinzler78/osmosis-launcher/actions/workflows/release.yml/badge.svg)](https://github.com/Rinzler78/osmosis-launcher/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![made-with-bash](https://img.shields.io/badge/-Made%20with%20Bash-1f425f.svg?logo=gnu-bash)](https://www.gnu.org/software/bash/)
-[![Latest Release](https://img.shields.io/github/v/tag/<your-user>/<your-repo>)](https://github.com/<your-user>/<your-repo>/releases)
+[![Latest Release](https://img.shields.io/github/v/tag/Rinzler78/osmosis-launcher)](https://github.com/Rinzler78/osmosis-launcher/releases)
 
 ---
 
@@ -33,7 +33,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 ## Installation
 1. **Clone the project**
    ```console
-git clone https://github.com/<your-user>/<your-repo>.git
+git clone https://github.com/Rinzler78/osmosis-launcher.git
 cd osmosis-launcher
 ```
 2. **Clone Osmosis sources**
