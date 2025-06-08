@@ -30,6 +30,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           body: |
-            Automated release for tag ${{ github.ref_name }}.
+            Release for tag ${{ github.ref_name }}.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
