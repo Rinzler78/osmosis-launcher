@@ -1,6 +1,13 @@
 # Osmosis Launcher
 
-[![Build](https://github.com/Rinzler78/osmosis-launcher/actions/workflows/release.yml/badge.svg)](https://github.com/Rinzler78/osmosis-launcher/actions)
+[![Issues](https://img.shields.io/github/issues/Rinzler78/osmosis-launcher)](https://github.com/Rinzler78/osmosis-launcher/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Rinzler78/osmosis-launcher)](https://github.com/Rinzler78/osmosis-launcher/pulls)
+[![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Rinzler78/osmosis-launcher/issues)
+[![Last Commit](https://img.shields.io/github/last-commit/Rinzler78/osmosis-launcher)](https://github.com/Rinzler78/osmosis-launcher/commits/main)
+[![Forks](https://img.shields.io/github/forks/Rinzler78/osmosis-launcher?style=social)](https://github.com/Rinzler78/osmosis-launcher/fork)
+[![Stars](https://img.shields.io/github/stars/Rinzler78/osmosis-launcher?style=social)](https://github.com/Rinzler78/osmosis-launcher/stargazers)
+[![CI](https://github.com/Rinzler78/osmosis-launcher/actions/workflows/release.yml/badge.svg)](https://github.com/Rinzler78/osmosis-launcher/actions)
+[![GitHub All Releases](https://img.shields.io/github/downloads/Rinzler78/osmosis-launcher/total.svg)](https://github.com/Rinzler78/osmosis-launcher/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![made-with-bash](https://img.shields.io/badge/-Made%20with%20Bash-1f425f.svg?logo=gnu-bash)](https://www.gnu.org/software/bash/)
 [![Latest Release](https://img.shields.io/github/v/tag/Rinzler78/osmosis-launcher)](https://github.com/Rinzler78/osmosis-launcher/releases)
