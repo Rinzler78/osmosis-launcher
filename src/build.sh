@@ -84,6 +84,7 @@ trap cleanup EXIT
 
 # Compiler le binaire pour la plateforme courante
 pushd "$TARGET_DIR"
+export GOPROXY=direct
 echo "[INFO] Compilation du binaire osmosisd pour $(go env GOOS)/$(go env GOARCH) ..."
 make build
 popd

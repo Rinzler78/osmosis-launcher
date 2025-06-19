@@ -21,6 +21,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Build with Docker](#build-with-docker)
 - [Scripts Details](#scripts-details)
 - [Contributing](#contributing)
 - [License](#license)
@@ -75,10 +76,21 @@ This is equivalent to:
 ./osmosisd optionalArg1 optionalArg2 ...
 ```
 
+## Build with Docker
+An alternative to installing Go locally is to use Docker:
+
+```console
+./docker_make.sh [tag]
+```
+This script builds an image for the current platform, runs `src/make.sh` inside
+the container with `--rm`, and copies the resulting `osmosisd` binary back to
+the project root. The version of the binary is checked after the build.
+
 ## Scripts Details
 - **src/clone.sh**: Clone the Osmosis repo at a given tag into the `osmosis` folder.
 - **src/patch.sh**: Apply the patch to enable launcher mode in osmosisd.
 - **src/make.sh**: Build the modified Osmosis sources.
+- **docker_make.sh**: Build the patched binary using Docker.
 - **src/build.sh**: Advanced build for different environments.
 - **src/tags.sh**: List available tags from the Osmosis repo.
 - **src/last_tag.sh**: Show the latest available tag.
