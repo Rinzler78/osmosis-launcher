@@ -74,7 +74,7 @@ fi
 # Trap pour supprimer Go si installé par le script
 cleanup() {
   if [ "$GO_INSTALLED_BEFORE" = "1" ]; then
-    echo "[CLEANUP] Suppression de Go temporaire."
+    echo "[CLEANUP] Suppression de Go $GO_VERSION ($GO_TMP_DIR)."
     rm -rf "$GO_TMP_DIR" "$GO_TMP_DIR.tar.gz"
     export PATH="$OLD_PATH"
     export GOROOT="$OLD_GOROOT"

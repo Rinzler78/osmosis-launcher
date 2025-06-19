@@ -4,6 +4,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET_DIR="osmosis"
 TAG=$1
 
+# Nettoyage automatique du dossier cloné à la fin
+cleanup() {
+  echo "[CLEANUP] Suppression de $TARGET_DIR."
+  rm -rf "$TARGET_DIR"
+}
+trap cleanup EXIT 
+
 # Si TAG n'est pas défini, on prend le dernier tag
 if [ -z "$TAG" ]; then
   TAG="$("$SCRIPT_DIR/last_tag.sh")"
@@ -45,9 +52,3 @@ if [ "$OSMOSISD_VERSION_OUTPUT" != "${TAG#v}" ]; then
 else
   echo "[OK] osmosisd version check passed: $OSMOSISD_VERSION_OUTPUT"
 fi
-
-# Nettoyage automatique du dossier cloné à la fin
-cleanup() {
-  rm -rf "$TARGET_DIR"
-}
-trap cleanup EXIT 
