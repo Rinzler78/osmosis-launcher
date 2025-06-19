@@ -80,16 +80,17 @@ This is equivalent to:
 An alternative to installing Go locally is to use Docker:
 
 ```console
-./docker_build.sh
+./docker_make.sh [tag]
 ```
-This script builds an image for the current platform and runs it with `--rm` so
-the container is removed once the build is over. The resulting `osmosisd`
-binary is copied back to the project root.
+This script builds an image for the current platform, runs `src/make.sh` inside
+the container with `--rm`, and copies the resulting `osmosisd` binary back to
+the project root. The version of the binary is checked after the build.
 
 ## Scripts Details
 - **src/clone.sh**: Clone the Osmosis repo at a given tag into the `osmosis` folder.
 - **src/patch.sh**: Apply the patch to enable launcher mode in osmosisd.
 - **src/make.sh**: Build the modified Osmosis sources.
+- **docker_make.sh**: Build the patched binary using Docker.
 - **src/build.sh**: Advanced build for different environments.
 - **src/tags.sh**: List available tags from the Osmosis repo.
 - **src/last_tag.sh**: Show the latest available tag.
