@@ -21,6 +21,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Build with Docker](#build-with-docker)
 - [Scripts Details](#scripts-details)
 - [Contributing](#contributing)
 - [License](#license)
@@ -74,6 +75,16 @@ This is equivalent to:
 ```console
 ./osmosisd optionalArg1 optionalArg2 ...
 ```
+
+## Build with Docker
+An alternative to installing Go locally is to use Docker:
+
+```console
+./docker_build.sh
+```
+This script builds an image for the current platform and runs it with `--rm` so
+the container is removed once the build is over. The resulting `osmosisd`
+binary is copied back to the project root.
 
 ## Scripts Details
 - **src/clone.sh**: Clone the Osmosis repo at a given tag into the `osmosis` folder.
