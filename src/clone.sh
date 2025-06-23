@@ -1,27 +1,28 @@
 #!/bin/bash
-# Clone le repo Osmosis à un tag donné dans un dossier cible
-# Usage: ./clone.sh <tag> <dossier_cible>
+# Clones the Osmosis repo at a given tag in a target directory
+# Usage: ./clone.sh <tag> <target_directory>
 
 set -e
+export GIT_LFS_SKIP_SMUDGE=1
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TAG="$1"
 TARGET_DIR="$2"
 REPO_URL=$(cat "$(dirname "$0")/repo_url.txt")
 DEFAULT_BRANCH="main"
 
-# Si TAG n'est pas défini, on prend le dernier tag
+# If TAG is not defined, we take the last tag
 if [ -z "$TAG" ]; then
   TAG="$("$SCRIPT_DIR/last_tag.sh")"
   echo "[INFO] No tag provided, using last tag: $TAG"
 else
-  # Vérifie que le tag existe
+  # Check if the tag exists
   if ! "$SCRIPT_DIR/tags.sh" | grep -Fxq "$TAG"; then
     echo "[ERROR] The specified tag '$TAG' was not found in the Osmosis repository. Use './src/tags.sh' to list available tags."
     exit 3
   fi
 fi
 
-# Si TARGET_DIR n'est pas défini, on met osmosis
+# If TARGET_DIR is not defined, use osmosis
 if [ -z "$TARGET_DIR" ]; then
   TARGET_DIR="osmosis"
   echo "[INFO] No target directory provided, using default: $TARGET_DIR"
@@ -37,26 +38,30 @@ if [ -d "$TARGET_DIR/.git" ]; then
   fi
   CURRENT_REF=$(git symbolic-ref --short -q HEAD || git describe --tags --exact-match 2>/dev/null)
   if [ "$CURRENT_REF" = "$TAG" ]; then
-    echo "[INFO] Already on tag/branch $TAG. Exiting."
+    echo "[INFO] Already on tag/branch $TAG. Performing hard reset to ensure clean state."
+    git fetch
+    git reset --hard "$TAG"
     exit 0
   fi
-  GIT_LFS_SKIP_SMUDGE=1 git fetch --all --tags
+  git fetch --all --tags
   git checkout "$TAG"
+  git reset --hard "$TAG"
   exit 0
 fi
 
-# Clone la branche principale puis checkout le tag
+# Clone the main branch then checkout the tag
 echo "[INFO] Cloning Osmosis repo to $TARGET_DIR"
-GIT_LFS_SKIP_SMUDGE=1 git clone --branch "$DEFAULT_BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR" > /dev/null 2>&1
+git clone --branch "$DEFAULT_BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR"
 cd "$TARGET_DIR"
 echo "[INFO] Fetching tags and checking out tag $TAG"
-GIT_LFS_SKIP_SMUDGE=1 git fetch --all --tags > /dev/null 2>&1
+git fetch --all --tags > /dev/null 2>&1
 git checkout "$TAG" > /dev/null 2>&1
-cd - > /dev/null
+git reset --hard "$TAG" > /dev/null 2>&1
+cd -
 
 if [ -d "$TARGET_DIR" ]; then
-  echo "[OK] Repo Osmosis cloné dans $TARGET_DIR à la version $TAG."
+  echo "[OK] Osmosis repo cloned in $TARGET_DIR at version $TAG."
 else
-  echo "[ERROR] Le clonage a échoué."
+  echo "[ERROR] Cloning failed."
   exit 2
 fi 

@@ -1,21 +1,21 @@
 #!/bin/bash
 set -e
 
-echo " Nettoyage des tags locaux non prsents sur origin..."
+echo "Cleaning up local tags not present on origin..."
 
-# Liste des tags locaux
+# List of local tags
 LOCAL_TAGS=$(git tag)
 
-# Liste des tags prsents sur origin
+# List of tags present on origin
 REMOTE_TAGS=$(git ls-remote --tags origin | awk '{print $2}' | sed 's#refs/tags/##' | sort -u)
 
-# Supprimer les tags locaux absents de origin
+# Delete local tags not present on origin
 TAGS_TO_DELETE=$(comm -23 <(echo "$LOCAL_TAGS" | sort) <(echo "$REMOTE_TAGS" | sort))
 
 if [[ -z "$TAGS_TO_DELETE" ]]; then
-  echo " Tous les tags locaux sont synchroniss avec origin."
+  echo "All local tags are synchronized with origin."
 else
-  echo " Suppression des tags suivants non prsents sur origin :"
+  echo "Deleting the following tags not present on origin:"
   echo "$TAGS_TO_DELETE"
   echo
 
@@ -23,6 +23,6 @@ else
     git tag -d "$tag"
   done
 
-  echo " Nettoyage termin."
+  echo "Cleanup finished."
 fi
 

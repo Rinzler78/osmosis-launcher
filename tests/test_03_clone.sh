@@ -99,7 +99,7 @@ echo "[OK] Test 5: Invalid tag is properly rejected => OK"
 # 6. Test if already on the right tag, script exits immediately
 TEST_DIR3="$ROOT_DIR/test3"
 "$CLONE_SH" "$LAST_TAG" "$TEST_DIR3"
-# On relance le script, il doit détecter qu'on est déjà sur le bon tag et sortir sans erreur
+# Re-run the script, it should detect that we are already on the right tag and exit without error
 OUTPUT2=$("$CLONE_SH" "$LAST_TAG" "$TEST_DIR3" 2>&1)
 echo "$OUTPUT2" | grep -q "Already on tag/branch $LAST_TAG" || {
   echo "[ERROR] Test 6: Script did not detect already on tag/branch"

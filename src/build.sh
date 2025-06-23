@@ -40,29 +40,29 @@ case "$UNAME_ARCH" in
     ;;
 esac
 
-# Sauvegarder l'environnement initial
+# Backup the initial environment
 OLD_PATH="$PATH"
 OLD_GOROOT="$GOROOT"
 
-# Détecter la version de Go requise
+# Detect the required Go version
 GO_VERSION=$($GO_VERSION_SH "$TARGET_DIR")
 if [ -z "$GO_VERSION" ]; then
-  echo "[FAIL] Impossible de déterminer la version de Go pour le dossier $TARGET_DIR."
+  echo "[FAIL] Could not determine Go version for directory $TARGET_DIR."
   exit 1
 fi
 
-# Vérifier la version de Go installée
+# Check the installed Go version
 if command -v go >/dev/null 2>&1; then
   INSTALLED_GO=$(go version | awk '{print $3}' | sed 's/go//')
 else
   INSTALLED_GO=""
 fi
 
-# Installer Go si nécessaire
+# Install Go if necessary
 if [[ "$INSTALLED_GO" != "$GO_VERSION"* ]]; then
-  echo "[INFO] Installation de Go $GO_VERSION ..."
+  echo "[INFO] Installing Go $GO_VERSION..."
   GO_TMP_DIR="/tmp/go-$GO_VERSION-$$"
-  # Télécharger l'archive via le script dédié
+  # Download the archive via the dedicated script
   GO_TARBALL_PATH=$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_OS" "$GO_ARCH" | tail -n1)
   tar -C /tmp -xzf "$GO_TARBALL_PATH"
   mv /tmp/go "$GO_TMP_DIR"
@@ -71,10 +71,10 @@ if [[ "$INSTALLED_GO" != "$GO_VERSION"* ]]; then
   GO_INSTALLED_BEFORE=1
 fi
 
-# Trap pour supprimer Go si installé par le script
+# Trap to delete Go if installed by the script
 cleanup() {
   if [ "$GO_INSTALLED_BEFORE" = "1" ]; then
-    echo "[CLEANUP] Suppression de Go $GO_VERSION ($GO_TMP_DIR)."
+    echo "[CLEANUP] Deleting Go $GO_VERSION ($GO_TMP_DIR)."
     rm -rf "$GO_TMP_DIR" "$GO_TMP_DIR.tar.gz"
     export PATH="$OLD_PATH"
     export GOROOT="$OLD_GOROOT"
@@ -82,12 +82,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Compiler le binaire pour la plateforme courante
+# Compile the binary for the current platform
 pushd "$TARGET_DIR"
 export GOPROXY=direct
-echo "[INFO] Compilation du binaire osmosisd pour $(go env GOOS)/$(go env GOARCH) ..."
+echo "[INFO] Compiling osmosisd binary for $(go env GOOS)/$(go env GOARCH)..."
 make build
 popd
 
-# Copier le binaire dans le dossier cible
+# Copy the binary to the target directory
 cp "$TARGET_DIR/build/osmosisd" $BUILD_DIR

@@ -12,7 +12,7 @@ if [ -z "$GO_VERSION" ]; then
   exit 1
 fi
 
-# Déduire GO_OS si non fourni
+# Deduce GO_OS if not provided
 if [ -z "$GO_OS" ]; then
   UNAME_OS="$(uname -s)"
   case "$UNAME_OS" in
@@ -32,7 +32,7 @@ if [ -z "$GO_OS" ]; then
   esac
 fi
 
-# Déduire GO_ARCH si non fourni
+# Deduce GO_ARCH if not provided
 if [ -z "$GO_ARCH" ]; then
   UNAME_ARCH="$(uname -m)"
   case "$UNAME_ARCH" in
@@ -49,7 +49,7 @@ if [ -z "$GO_ARCH" ]; then
   esac
 fi
 
-# Déterminer l'extension selon l'OS
+# Determine the extension according to the OS
 if [ "$GO_OS" = "windows" ]; then
   EXT="zip"
 else

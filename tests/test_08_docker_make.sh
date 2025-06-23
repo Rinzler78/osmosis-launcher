@@ -3,7 +3,7 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DOCKER_MAKE_SH="$SCRIPT_DIR/../docker_make.sh"
+DOCKER_MAKE_SH="$SCRIPT_DIR/../src/docker_make.sh"
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
 echo_title() {

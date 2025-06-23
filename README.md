@@ -21,7 +21,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Build with Docker](#build-with-docker)
+- [Build Process](#build-process)
 - [Scripts Details](#scripts-details)
 - [Contributing](#contributing)
 - [License](#license)
@@ -35,8 +35,9 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 ## Requirements
 - [git](https://git-scm.com/)
 - [git-lfs](https://git-lfs.github.com/)
-- [go](https://go.dev/) (required version: see Osmosis repo go.mod)
+- [go](https://go.dev/) (required for local build if Docker is not used)
 - bash (>= 4)
+- [docker](https://www.docker.com/) (optional, used for building)
 
 ## Installation
 1. **Clone the project**
@@ -51,13 +52,12 @@ src/clone.sh <tag>
 ```
 3. **Apply the launcher patch**
    ```console
-src/patch.sh <tag>
-# Example: src/patch.sh v12.3.0
+src/patch.sh osmosis
 ```
 4. **Build Osmosis with the launcher**
    ```console
-src/make.sh <tag>
-# Example: src/make.sh v12.3.0
+./make.sh <tag>
+# Example: ./make.sh v12.3.0
 ```
 
 ## Quick Start
@@ -76,21 +76,24 @@ This is equivalent to:
 ./osmosisd optionalArg1 optionalArg2 ...
 ```
 
-## Build with Docker
-An alternative to installing Go locally is to use Docker:
+## Build Process
+The build is handled by the main `make.sh` script, which simplifies the process by automatically detecting if Docker is available.
 
+- If Docker is running, it will be used to build the `osmosisd` binary in a containerized environment (`src/docker_make.sh`). This avoids the need to install Go and other dependencies on your local machine.
+- If Docker is not available, the script will fall back to a local build using `src/make.sh`, which requires Go to be installed.
+
+To build, simply run:
 ```console
-./docker_make.sh [tag]
+./make.sh [tag]
 ```
-This script builds an image for the current platform, runs `src/make.sh` inside
-the container with `--rm`, and copies the resulting `osmosisd` binary back to
-the project root. The version of the binary is checked after the build.
+The script will create the `osmosisd` binary in the project root.
 
 ## Scripts Details
+- **make.sh**: Main build script. Automatically uses Docker if available, otherwise performs a local build.
 - **src/clone.sh**: Clone the Osmosis repo at a given tag into the `osmosis` folder.
 - **src/patch.sh**: Apply the patch to enable launcher mode in osmosisd.
-- **src/make.sh**: Build the modified Osmosis sources.
-- **docker_make.sh**: Build the patched binary using Docker.
+- **src/make.sh**: Build the modified Osmosis sources locally (requires Go).
+- **src/docker_make.sh**: Build the patched binary using Docker.
 - **src/build.sh**: Advanced build for different environments.
 - **src/tags.sh**: List available tags from the Osmosis repo.
 - **src/last_tag.sh**: Show the latest available tag.

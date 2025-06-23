@@ -15,7 +15,7 @@ mainFileBaseDirectory=${mainFilePath%/*}
 
 if ! [[ -f $mainFilePath ]]
 then
-    echo "$mainFilePath not exists"
+    echo "$mainFilePath does not exist"
     exit 1 
 fi
 
@@ -25,7 +25,7 @@ targetLauncherGoFile="$mainFileBaseDirectory/$launcherGoFilePath"
 
 if [[ -f $targetLauncherGoFile ]]
 then
-    echo "Remove $targetLauncherGoFile"
+    echo "Removing $targetLauncherGoFile"
     rm -rf $targetLauncherGoFile
 fi
 

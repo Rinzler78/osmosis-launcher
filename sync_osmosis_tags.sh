@@ -15,68 +15,68 @@ for arg in "$@"; do
       PUSH_TAGS=false
       ;;
     *)
-      echo " Usage : $0 [--dry-run] [--no-push]"
+      echo "Usage: $0 [--dry-run] [--no-push]"
       exit 1
       ;;
   esac
 done
 
-echo " Recherche des tags osmosis au format strict vX.X.X..."
+echo "Searching for osmosis tags in strict vX.X.X format..."
 
-# 1) Rcuprer tous les tags vX.X.X de osmosis (tag sha)
+# 1) Get all vX.X.X tags from osmosis (tag sha)
 OSMOSIS_TAGS=$(git ls-remote --tags "$REPO_URL" \
   | grep -v '\^{}' \
   | grep -E 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$' \
   | awk '{ sub("refs/tags/", "", $2); print $2 " " $1 }' \
   | sort -u)
 
-# 2) Rcuprer tous les tags locaux
+# 2) Get all local tags
 LOCAL_TAGS=$(git tag)
 
 NEW_TAGS=0
 
-# 3) Pour chaque tag osmosis vX.X.X
+# 3) For each osmosis tag vX.X.X
 while read -r tag sha; do
   if [[ -z "$tag" || -z "$sha" ]]; then
     continue
   fi
 
-  # 4) Skip sil est dj en local
+  # 4) Skip if it is already local
   if echo "$LOCAL_TAGS" | grep -qx "$tag"; then
-    echo " $tag dj prsent localement"
+    echo "$tag already present locally"
     continue
   fi
 
-  echo " Nouveau tag manquant localement : $tag ($sha)"
+  echo "New tag missing locally: $tag ($sha)"
 
   if [ "$DRY_RUN" = true ]; then
-    echo " [dry-run] git fetch $REPO_URL $sha"
-    echo " [dry-run] git tag $tag $sha"
-    [ "$PUSH_TAGS" = true ] && echo " [dry-run] git push origin $tag"
+    echo "[dry-run] git fetch $REPO_URL $sha"
+    echo "[dry-run] git tag $tag $sha"
+    [ "$PUSH_TAGS" = true ] && echo "[dry-run] git push origin $tag"
   else
     git fetch --quiet "$REPO_URL" "$sha"
     git tag "$tag" "$sha"
     if [ "$PUSH_TAGS" = true ]; then
       git push origin "$tag"
-      echo " $tag cr et pouss"
+      echo "$tag created and pushed"
     else
-      echo " $tag cr localement (--no-push)"
+      echo "$tag created locally (--no-push)"
     fi
   fi
 
   ((NEW_TAGS++))
 done <<< "$OSMOSIS_TAGS"
 
-# Rsum
+# Summary
 if [[ $NEW_TAGS -eq 0 ]]; then
-  echo " Aucun nouveau tag  synchroniser."
+  echo "No new tags to sync."
 else
   if [ "$DRY_RUN" = true ]; then
-    echo " [dry-run] $NEW_TAGS tag(s) seraient synchroniss."
+    echo "[dry-run] $NEW_TAGS tag(s) would be synchronized."
   elif [ "$PUSH_TAGS" = false ]; then
-    echo " $NEW_TAGS tag(s) crs localement (--no-push)"
+    echo "$NEW_TAGS tag(s) created locally (--no-push)"
   else
-    echo " $NEW_TAGS tag(s) synchronis(s) avec succs."
+    echo "$NEW_TAGS tag(s) successfully synchronized."
   fi
 fi
 

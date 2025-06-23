@@ -4,19 +4,19 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET_DIR="osmosis"
 TAG=$1
 
-# Nettoyage automatique du dossier cloné à la fin
+# Automatic cleaning of the cloned folder at the end
 cleanup() {
-  echo "[CLEANUP] Suppression de $TARGET_DIR."
+  echo "[CLEANUP] Deleting $TARGET_DIR."
   rm -rf "$TARGET_DIR"
 }
 trap cleanup EXIT 
 
-# Si TAG n'est pas défini, on prend le dernier tag
+# If TAG is not defined, we take the last tag
 if [ -z "$TAG" ]; then
   TAG="$("$SCRIPT_DIR/last_tag.sh")"
   echo "[INFO] No tag provided, using last tag: $TAG"
 else
-  # Vérifie que le tag existe
+  # Check if the tag exists
   if ! "$SCRIPT_DIR/tags.sh" | grep -Fxq "$TAG"; then
     echo "[ERROR] The specified tag '$TAG' was not found in the Osmosis repository. Use './src/tags.sh' to list available tags."
     exit 3
@@ -44,7 +44,7 @@ then
 fi
 
 # Compare versions
-# Vérification de la version du binaire
+# Checking the binary version
 OSMOSISD_VERSION_OUTPUT=$("./osmosisd" version 2>/dev/null | head -n 1)
 if [ "$OSMOSISD_VERSION_OUTPUT" != "${TAG#v}" ]; then
   echo "[FAIL] Built osmosisd version ($OSMOSISD_VERSION_OUTPUT) does not match requested version (${TAG#v})."

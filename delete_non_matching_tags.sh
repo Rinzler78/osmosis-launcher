@@ -1,43 +1,43 @@
 #!/bin/bash
 
-# Supprime tous les tags qui ne correspondent pas au format strict vX.X.X.X
-# Usage : ./delete_non_matching_tags.sh [--dry-run]
+# Deletes all tags that do not match the strict format vX.X.X.X
+# Usage: ./delete_non_matching_tags.sh [--dry-run]
 
 DRY_RUN=false
 [[ "$1" == "--dry-run" ]] && DRY_RUN=true
 
-echo " Recherche des tags non conformes ( vX.X.X.X)..."
+echo "Searching for non-compliant tags (vX.X.X.X)..."
 
-# Tags locaux invalides
+# Invalid local tags
 INVALID_TAGS=$(git tag | grep -vE '^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
 
 if [[ -z "$INVALID_TAGS" ]]; then
-  echo " Aucun tag invalide trouv."
+  echo "No invalid tags found."
   exit 0
 fi
 
 echo
-echo " Tags  supprimer (local + remote si prsent) :"
+echo "Tags to delete (local + remote if present):"
 echo "$INVALID_TAGS"
 echo
 
 if $DRY_RUN; then
-  echo " --dry-run actif : aucun tag ne sera supprim."
+  echo "--dry-run active: no tags will be deleted."
 else
-  echo " Suppression des tags invalides..."
+  echo "Deleting invalid tags..."
 
   while read -r tag; do
-    echo " Suppression locale : $tag"
+    echo "Deleting local tag: $tag"
     git tag -d "$tag"
 
-    # Vrifie si le tag existe ct remote
+    # Check if the tag exists on the remote
     if git ls-remote --tags origin | grep -q "refs/tags/$tag$"; then
-      echo " Suppression remote  : $tag"
+      echo "Deleting remote tag: $tag"
       git push origin ":refs/tags/$tag"
     fi
   done <<< "$INVALID_TAGS"
 
   echo
-  echo " Tous les tags invalides ont t supprims."
+  echo "All invalid tags have been deleted."
 fi
 

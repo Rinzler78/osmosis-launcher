@@ -74,9 +74,6 @@ fi
 echo "[OK] osmosisd version is the same with and without --launcher: $OSMOSISD_VERSION"
 
 # 8. Check error on non-existent directory
-ERROR_MSG1="[FAIL] Impossible de déterminer la version de Go pour le dossier"
-ERROR_MSG2="[FAIL] Target directory"
-# The error messages above are in French, let's check for English equivalents
 if bash "$PATCH_SH" "/tmp/does_not_exist_$$" 2>&1 | grep -q "\[FAIL\] Target directory .\+ does not exist."; then
   echo "[OK] Error message found for non-existent directory."
 else
