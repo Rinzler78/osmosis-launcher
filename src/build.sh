@@ -3,42 +3,39 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET_DIR="$1"
+GO_OS="${2-}"
+GO_ARCH="${3-}"
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "[FAIL] Directory $TARGET_DIR does not exist."
   exit 1
 fi
 BUILD_DIR="."
 GO_VERSION_SH="$SCRIPT_DIR/retrieve_required_go_version.sh"
+SUPPORTED_PLATFORMS_JSON="$SCRIPT_DIR/../supported_platforms.json"
+VALIDATE_PLATFORM_SH="$SCRIPT_DIR/validate_platform.sh"
+RESOLVE_OS_SH="$SCRIPT_DIR/resolve_os.sh"
+RESOLVE_ARCH_SH="$SCRIPT_DIR/resolve_arch.sh"
 
-# Detect OS and architecture for Go download
-UNAME_OS="$(uname -s)"
-UNAME_ARCH="$(uname -m)"
-
-case "$UNAME_OS" in
-  Linux)
-    GO_OS="linux"
-    ;;
-  Darwin)
-    GO_OS="darwin"
-    ;;
-  *)
-    echo "[FAIL] Unsupported OS: $UNAME_OS"
+# Détection OS/ARCH si non fournis
+if [ -z "$GO_OS" ]; then
+  GO_OS=$("$RESOLVE_OS_SH" "$(uname -s)")
+  if [ -z "$GO_OS" ]; then
+    echo "[FAIL] Could not resolve a supported OS from 'uname -s' ($(uname -s))."
     exit 1
-    ;;
-esac
-
-case "$UNAME_ARCH" in
-  x86_64|amd64)
-    GO_ARCH="amd64"
-    ;;
-  arm64|aarch64)
-    GO_ARCH="arm64"
-    ;;
-  *)
-    echo "[FAIL] Unsupported architecture: $UNAME_ARCH"
+  fi
+fi
+if [ -z "$GO_ARCH" ]; then
+  GO_ARCH=$("$RESOLVE_ARCH_SH" "$(uname -m)")
+  if [ -z "$GO_ARCH" ]; then
+    echo "[FAIL] Could not resolve a supported architecture from 'uname -m' ($(uname -m))."
     exit 1
-    ;;
-esac
+  fi
+fi
+if ! "$VALIDATE_PLATFORM_SH" "$GO_OS" "$GO_ARCH"; then
+  echo "[FAIL] The platform $GO_OS/$GO_ARCH is not supported."
+  exit 1
+fi
 
 # Backup the initial environment
 OLD_PATH="$PATH"
@@ -51,6 +48,10 @@ if [ -z "$GO_VERSION" ]; then
   exit 1
 fi
 
+# Toujours télécharger Go pour la plateforme du conteneur
+GO_DL_OS=$("$RESOLVE_OS_SH" "$(uname -s)")
+GO_DL_ARCH=$("$RESOLVE_ARCH_SH" "$(uname -m)")
+
 # Check the installed Go version
 if command -v go >/dev/null 2>&1; then
   INSTALLED_GO=$(go version | awk '{print $3}' | sed 's/go//')
@@ -60,10 +61,10 @@ fi
 
 # Install Go if necessary
 if [[ "$INSTALLED_GO" != "$GO_VERSION"* ]]; then
-  echo "[INFO] Installing Go $GO_VERSION..."
+  echo "[INFO] Installing Go $GO_VERSION ($GO_DL_OS/$GO_DL_ARCH)..."
   GO_TMP_DIR="/tmp/go-$GO_VERSION-$$"
-  # Download the archive via the dedicated script
-  GO_TARBALL_PATH=$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_OS" "$GO_ARCH" | tail -n1)
+  # Download the archive via le dedicated script (toujours pour la plateforme du conteneur)
+  GO_TARBALL_PATH=$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_DL_OS" "$GO_DL_ARCH" | tail -n1)
   tar -C /tmp -xzf "$GO_TARBALL_PATH"
   mv /tmp/go "$GO_TMP_DIR"
   export GOROOT="$GO_TMP_DIR"
@@ -82,10 +83,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Compile the binary for the current platform
+# Compile the binary pour la plateforme cible
 pushd "$TARGET_DIR"
 export GOPROXY=direct
-echo "[INFO] Compiling osmosisd binary for $(go env GOOS)/$(go env GOARCH)..."
+export GOOS="$GO_OS"
+export GOARCH="$GO_ARCH"
+echo "[INFO] Compiling osmosisd binary for $GO_OS/$GO_ARCH..."
 make build
 popd
 

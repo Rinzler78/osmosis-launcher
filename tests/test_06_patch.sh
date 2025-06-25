@@ -90,7 +90,7 @@ if bash "$PATCH_SH" "$BROKEN_DIR"; then
   echo "[FAIL] patch.sh did not fail with missing main.go."
   exit 1
 fi
-if ! bash "$PATCH_SH" "$BROKEN_DIR" 2>&1 | grep -q "not exists"; then
+if ! bash "$PATCH_SH" "$BROKEN_DIR" 2>&1 | grep -q "does not exist"; then
   echo "[FAIL] Error message not found for missing main.go."
   exit 1
 fi

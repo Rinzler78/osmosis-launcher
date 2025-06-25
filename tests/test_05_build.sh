@@ -37,16 +37,13 @@ TAG=$($LAST_TAG_SH)
 TEST_DIR="$ROOT_DIR/test_build"
 $CLONE_SH "$TAG" "$TEST_DIR"
 
-# 2. Build
-export GET_LAST_TAG_SH="$LAST_TAG_SH"
-export GO_VERSION_SH="$GO_VERSION_SH"
-
-if ! bash "$BUILD_SH" "$TEST_DIR" "$TAG"; then
-  echo "[FAIL] build.sh failed to build osmosisd."
+# 2. Build (plateforme courante uniquement)
+if ! bash "$BUILD_SH" "$TEST_DIR"; then
+  echo "[FAIL] build.sh failed to build osmosisd (native platform)."
   exit 1
 fi
 
-# 3. Check binary
+# 3. Check binary (pour la dernière build)
 if [ ! -f osmosisd ]; then
   echo "[FAIL] osmosisd binary not found after build."
   exit 1
