@@ -21,7 +21,7 @@ for arg in "$@"; do
   fi
 done
 
-set -- "${ARGS[@]}"
+set -- "${ARGS[@]:-}"
 
 if [ $# -eq 0 ]; then
   # Aucun paramètre : build local, tag auto
