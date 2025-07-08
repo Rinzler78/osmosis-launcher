@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TARGET_DIR="$1"
+source "$SCRIPT_DIR/parse_args.sh" "$@"
 LAUNCHER_GO_SRC="$SCRIPT_DIR/launcher.go"
 
 # Check if TARGET_DIR exists

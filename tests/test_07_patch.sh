@@ -1,4 +1,6 @@
 #!/bin/bash
+
+. "$(dirname "$0")/utils.sh"
 # Test script for src/patch.sh
 # Usage: ./test_patch.sh
 
@@ -35,67 +37,86 @@ rm -f launcher.go
 # 1. Clone repo
 TAG=$($LAST_TAG_SH)
 TEST_DIR="$ROOT_DIR/test_patch"
-$CLONE_SH "$TAG" "$TEST_DIR"
+$CLONE_SH --tag "$TAG" --target-dir "$TEST_DIR"
 
 # 3. Run patch.sh
-if ! bash "$PATCH_SH" "$TEST_DIR"; then
-  echo "[FAIL] patch.sh failed."
-  exit 1
+if ! bash "$PATCH_SH" --target-dir "$TEST_DIR"; then
+  fail "patch.sh failed."
 fi
 
 # 4. Check launcher.go copied
 if [ ! -f "$TEST_DIR/cmd/osmosisd/launcher.go" ]; then
-  echo "[FAIL] launcher.go not copied to cmd/osmosisd."
-  exit 1
+  fail "launcher.go not copied to cmd/osmosisd."
 fi
 
 # 5. Check main.go modified
 if ! grep -q 'wait_for_launcher()' "$TEST_DIR/cmd/osmosisd/main.go"; then
-  echo "[FAIL] main.go not patched with wait_for_launcher()."
-  exit 1
+  fail "main.go not patched with wait_for_launcher()."
 fi
 
 # 6. Build the patched repo
 
 export GO_VERSION_SH="$ROOT_DIR/src/retrieve_required_go_version.sh"
 if ! bash "$BUILD_SH" "$TEST_DIR"; then
-  echo "[FAIL] build.sh failed after patch."
-  exit 1
+  fail "build.sh failed after patch."
 fi
 
 # 7. Check osmosisd version with and without --launcher
 OSMOSISD_VERSION=$(./osmosisd version 2>/dev/null | head -n 1)
 OSMOSISD_LAUNCHER_VERSION=$(./osmosisd --launcher version 2>/dev/null | head -n 1)
 if [ "$OSMOSISD_VERSION" != "$OSMOSISD_LAUNCHER_VERSION" ]; then
-  echo "[FAIL] osmosisd version ($OSMOSISD_VERSION) != osmosisd --launcher version ($OSMOSISD_LAUNCHER_VERSION)"
-  exit 1
+  fail "osmosisd version ($OSMOSISD_VERSION) != osmosisd --launcher version ($OSMOSISD_LAUNCHER_VERSION)"
 fi
 
-echo "[OK] osmosisd version is the same with and without --launcher: $OSMOSISD_VERSION"
+pass "osmosisd version is the same with and without --launcher: $OSMOSISD_VERSION"
 
 # 8. Check error on non-existent directory
-if bash "$PATCH_SH" "/tmp/does_not_exist_$$" 2>&1 | grep -q "\[FAIL\] Target directory .\+ does not exist."; then
-  echo "[OK] Error message found for non-existent directory."
+if bash "$PATCH_SH" --target-dir "/tmp/does_not_exist_$$" 2>&1 | grep -q "\[FAIL\] Target directory .\+ does not exist."; then
+  pass "Error message found for non-existent directory."
 else
-  echo "[FAIL] Error message not found for non-existent directory."
-  exit 1
+  fail "Error message not found for non-existent directory."
 fi
 
 # 9. Error: main.go missing
 BROKEN_DIR="$ROOT_DIR/test_patch_broken"
-$CLONE_SH "$TAG" "$BROKEN_DIR"
+$CLONE_SH --tag "$TAG" --target-dir "$BROKEN_DIR"
 rm -f "$BROKEN_DIR/cmd/osmosisd/main.go"
 cp "$LAUNCHER_GO_SRC" launcher.go
-if bash "$PATCH_SH" "$BROKEN_DIR"; then
-  echo "[FAIL] patch.sh did not fail with missing main.go."
-  exit 1
+if bash "$PATCH_SH" --target-dir "$BROKEN_DIR"; then
+  fail "patch.sh did not fail with missing main.go."
 fi
-if ! bash "$PATCH_SH" "$BROKEN_DIR" 2>&1 | grep -q "does not exist"; then
-  echo "[FAIL] Error message not found for missing main.go."
-  exit 1
+if ! bash "$PATCH_SH" --target-dir "$BROKEN_DIR" 2>&1 | grep -q "does not exist"; then
+  fail "Error message not found for missing main.go."
 fi
 rm -rf "$BROKEN_DIR"
 
-echo "[OK] patch.sh fails as expected with missing main.go."
+pass "patch.sh fails as expected with missing main.go."
 
-echo "[ALL TESTS PASSED]" 
+pass "ALL TESTS PASSED"
+
+TAG=$($LAST_TAG_SH)
+TARGET_DIR="test_patch_dir"
+
+cleanup() {
+  rm -rf "$TARGET_DIR"
+}
+trap cleanup EXIT
+
+echo_title
+
+echo "[INFO] Test patch.sh (paramètre nommé)"
+
+# Clean initial state
+rm -rf "$TARGET_DIR"
+
+# Clone d'abord
+if ! bash "$CLONE_SH" --tag "$TAG" --target-dir "$TARGET_DIR"; then
+  fail "clone.sh failed for patch test."
+fi
+
+# Patch
+if ! bash "$PATCH_SH" --target-dir "$TARGET_DIR"; then
+  fail "patch.sh failed with named parameter."
+fi
+
+pass "patch.sh test with named parameter passed." 

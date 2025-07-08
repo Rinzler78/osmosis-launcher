@@ -1,18 +1,17 @@
 #!/bin/bash
 # Clones the Osmosis repo at a given tag in a target directory
-# Usage: ./clone.sh <tag> <target_directory>
+# Usage: ./clone.sh --tag <tag> --target-dir <dir>
 
 set -e
-export GIT_LFS_SKIP_SMUDGE=1
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TAG="$1"
-TARGET_DIR="$2"
-REPO_URL=$(cat "$(dirname "$0")/repo_url.txt")
+source "$SCRIPT_DIR/parse_args.sh" "$@"
+export GIT_LFS_SKIP_SMUDGE=1
+REPO_URL=$(cat "$SCRIPT_DIR/repo_url.txt")
 DEFAULT_BRANCH="main"
 
 # If TAG is not defined, we take the last tag
 if [ -z "$TAG" ]; then
-  TAG="$("$SCRIPT_DIR/last_tag.sh")"
+  TAG="$($SCRIPT_DIR/last_tag.sh)"
   echo "[INFO] No tag provided, using last tag: $TAG"
 else
   # Check if the tag exists

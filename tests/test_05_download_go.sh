@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+. "$(dirname "$0")/utils.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
@@ -34,26 +36,25 @@ for entry in "${PLATFORMS[@]}"; do
   GO_OS=$1
   GO_ARCH=$2
   EXT=$3
-  SCRIPT_PATH="$(dirname "$0")/../src/download_go_archive.sh"
+  SCRIPT_PATH="$SCRIPT_DIR/../src/download_go_archive.sh"
   echo "[INFO] Testing $GO_VERSION $GO_OS $GO_ARCH"
-  ARCHIVE_PATH=$($SCRIPT_PATH "$GO_VERSION" "$GO_OS" "$GO_ARCH" | tail -n1)
+  ARCHIVE_PATH=$($SCRIPT_PATH --go-version "$GO_VERSION" --os "$GO_OS" --arch "$GO_ARCH" | tail -n1)
   # Check the expected extension
   if [[ "$ARCHIVE_PATH" != *.$EXT ]]; then
-    echo "[TEST FAIL] $GO_VERSION $GO_OS $GO_ARCH: Wrong extension ($ARCHIVE_PATH, expected: $EXT)"
-    FAIL=$((FAIL+1))
+    fail "$GO_VERSION $GO_OS $GO_ARCH: Wrong extension ($ARCHIVE_PATH, expected: $EXT)"
     continue
   fi
   if [ -f "$ARCHIVE_PATH" ]; then
-    echo "[TEST PASS] $GO_VERSION $GO_OS $GO_ARCH: $ARCHIVE_PATH"
+    pass "$GO_VERSION $GO_OS $GO_ARCH: $ARCHIVE_PATH"
     rm -f "$ARCHIVE_PATH"
     SUCCESS=$((SUCCESS+1))
   else
-    echo "[TEST FAIL] $GO_VERSION $GO_OS $GO_ARCH: $ARCHIVE_PATH not found"
+    fail "$GO_VERSION $GO_OS $GO_ARCH: $ARCHIVE_PATH not found"
     FAIL=$((FAIL+1))
   fi
 done
 
-echo "[INFO] Summary: $SUCCESS success, $FAIL failures."
+pass "Summary: $SUCCESS success, $FAIL failures."
 if [ "$FAIL" -gt 0 ]; then
   exit 1
 fi 

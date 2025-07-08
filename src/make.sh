@@ -1,10 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TARGET_DIR="osmosis"
-TAG=$1
-GO_OS="${2-}"
-GO_ARCH="${3-}"
+source "$SCRIPT_DIR/parse_args.sh" "$@"
 VALIDATE_PLATFORM_SH="$SCRIPT_DIR/validate_platform.sh"
 RESOLVE_OS_SH="$SCRIPT_DIR/resolve_os.sh"
 RESOLVE_ARCH_SH="$SCRIPT_DIR/resolve_arch.sh"
@@ -49,21 +46,28 @@ else
   fi
 fi
 
+# Dossier cible pour le clone et le build (paramètre 4 ou 'osmosis' par défaut)
+if [ -n "${4-}" ]; then
+  TARGET_DIR="$4"
+else
+  TARGET_DIR="osmosis"
+fi
+
 # Clone the repo
-if ! "$SCRIPT_DIR/clone.sh" "$TAG" "$TARGET_DIR"; then
+if ! "$SCRIPT_DIR/clone.sh" --tag "$TAG" --target-dir "$TARGET_DIR"; then
   echo "Cannot clone the repo"
   exit 1
 fi
 
 # Patch the repo
-if ! "$SCRIPT_DIR/patch.sh" "$TARGET_DIR"
+if ! "$SCRIPT_DIR/patch.sh" --target-dir "$TARGET_DIR"
 then
     echo "Cannot build osmosis-launcher"
     exit 1
 fi
 
 # Build
-if ! "$SCRIPT_DIR/build.sh" "$TARGET_DIR" "$GO_OS" "$GO_ARCH"
+if ! "$SCRIPT_DIR/build.sh" --target-dir "$TARGET_DIR" --os "$GO_OS" --arch "$GO_ARCH"
 then
     echo "Cannot build osmosis-launcher"
     exit 1
@@ -74,7 +78,7 @@ fi
 CUR_OS=$("$RESOLVE_OS_SH" "$(uname -s)")
 CUR_ARCH=$("$RESOLVE_ARCH_SH" "$(uname -m)")
 if [ "$GO_OS" = "$CUR_OS" ] && [ "$GO_ARCH" = "$CUR_ARCH" ]; then
-  OSMOSISD_VERSION_OUTPUT=$("./osmosisd" version 2>/dev/null | head -n 1)
+  OSMOSISD_VERSION_OUTPUT=$(./osmosisd version 2>/dev/null | head -n 1)
   if [ "$OSMOSISD_VERSION_OUTPUT" != "${TAG#v}" ]; then
     echo "[FAIL] Built osmosisd version ($OSMOSISD_VERSION_OUTPUT) does not match requested version (${TAG#v})."
     exit 1

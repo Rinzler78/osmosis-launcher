@@ -1,4 +1,6 @@
 #!/bin/bash
+
+. "$(dirname "$0")/utils.sh"
 # Test des scripts resolve_os.sh, resolve_arch.sh et validate_platform.sh
 
 set -e
@@ -7,9 +9,6 @@ SRC_DIR="$SCRIPT_DIR/../src"
 RESOLVE_OS_SH="$SRC_DIR/resolve_os.sh"
 RESOLVE_ARCH_SH="$SRC_DIR/resolve_arch.sh"
 VALIDATE_PLATFORM_SH="$SRC_DIR/validate_platform.sh"
-
-pass() { echo "✅ [OK] $1"; }
-fail() { echo "❌ [FAIL] $1"; exit 1; }
 
 # Matrice de tests pour resolve_os.sh
 os_cases=(

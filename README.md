@@ -20,6 +20,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Parameter Handling](#parameter-handling)
 - [Quick Start](#quick-start)
 - [Build Process](#build-process)
 - [Scripts Details](#scripts-details)
@@ -31,6 +32,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - Dynamically inject commands after startup
 - Automation scripts to clone, patch, and build Osmosis
 - Automated tests for each key step
+- Unified and modern parameter handling across all scripts
 
 ## Requirements
 - [git](https://git-scm.com/)
@@ -38,6 +40,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - [go](https://go.dev/) (required for local build if Docker is not used)
 - bash (>= 4)
 - [docker](https://www.docker.com/) (optional, used for building)
+- [jq](https://stedolan.github.io/jq/) (for platform validation)
 
 ## Installation
 1. **Clone the project**
@@ -45,60 +48,93 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 git clone https://github.com/Rinzler78/osmosis-launcher.git
 cd osmosis-launcher
 ```
-2. **Clone Osmosis sources**
-   ```console
-src/clone.sh <tag>
-# Example: src/clone.sh v12.3.0
+
+## Parameter Handling
+All scripts now use a unified and modern parameter system, handled by `src/parse_args.sh`. This means you can use named options everywhere, and defaults are smartly chosen if you omit them.
+
+**Common parameters:**
+- `--tag <tag>`: Osmosis version to use (default: latest tag)
+- `--os <os>`: Target OS (default: auto-detected)
+- `--arch <arch>`: Target architecture (default: auto-detected)
+- `--target-dir <dir>`: Working directory (default: `osmosis`)
+
+**Example usage:**
+```console
+src/clone.sh --tag v12.3.0 --target-dir myosmo
+src/patch.sh --target-dir myosmo
+src/build.sh --os linux --arch amd64 --target-dir myosmo
+src/docker_make.sh --os linux --arch amd64 --target-dir myosmo
 ```
-3. **Apply the launcher patch**
-   ```console
-src/patch.sh osmosis
-```
-4. **Build Osmosis with the launcher**
-   ```console
-./make.sh <tag>
-# Example: ./make.sh v12.3.0
-```
+If you omit a parameter, the script will choose a sensible default (e.g., latest tag, current platform, etc.).
+
+Some scripts (like `download_go_archive.sh`) still accept positional arguments for backward compatibility, but named options are preferred.
 
 ## Quick Start
-Launch osmosisd in launcher mode:
+
+The fastest way to get started is to use the main `make.sh` script at the root of the project. This script will automatically detect your environment and build everything for you.
+
+### Minimal (no parameters)
+```console
+./make.sh
+```
+- Clones the latest Osmosis version
+- Applies the launcher patch
+- Builds the binary for your current platform (using Docker if available, otherwise locally)
+- Produces the `osmosisd` binary in the project root (or in `./buildx-out/build/` for cross-builds)
+
+### Advanced (with parameters)
+You can specify the version, platform, and target directory if needed:
+```console
+./make.sh --tag v12.3.0 --os linux --arch amd64 --target-dir myosmo
+```
+- `--tag <tag>`: Osmosis version (default: latest)
+- `--os <os>`: Target OS (default: auto-detected)
+- `--arch <arch>`: Target architecture (default: auto-detected)
+- `--target-dir <dir>`: Working directory (default: `osmosis`)
+
+**Example:**
+```console
+./make.sh --tag v12.3.0 --os linux --arch amd64
+```
+
+You can then launch osmosisd in launcher mode:
 ```console
 ./osmosisd --launcher
 ```
-You can then write commands to execute (example: `version`).
 
-Launch osmosisd in launcher mode with arguments:
-```console
-./osmosisd --launcher optionalArg1 optionalArg2 ...
-```
-This is equivalent to:
-```console
-./osmosisd optionalArg1 optionalArg2 ...
-```
+For more control or to run steps individually, see the [Parameter Handling](#parameter-handling) and [Scripts Details](#scripts-details) sections.
 
 ## Build Process
-The build is handled by the main `make.sh` script, which simplifies the process by automatically detecting if Docker is available.
+The main `make.sh` script orchestrates the build. It automatically detects if Docker is available:
 
-- If Docker is running, it will be used to build the `osmosisd` binary in a containerized environment (`src/docker_make.sh`). This avoids the need to install Go and other dependencies on your local machine.
-- If Docker is not available, the script will fall back to a local build using `src/make.sh`, which requires Go to be installed.
+- **With Docker:** Uses `src/docker_make.sh` to build in a container for maximum reproducibility and no local Go install required.
+- **Without Docker:** Uses `src/make.sh` for a local build (requires Go installed locally).
 
-To build, simply run:
+All scripts accept the same named parameters, and will auto-detect missing values:
+- If `--tag` is omitted, the latest tag is used.
+- If `--os` or `--arch` are omitted, the current platform is detected.
+- If `--target-dir` is omitted, `osmosis` is used.
+
+**To build:**
 ```console
-./make.sh [tag]
+./make.sh --tag v12.3.0 --os linux --arch amd64 --target-dir osmosis
 ```
-The script will create the `osmosisd` binary in the project root.
 
 ## Scripts Details
-- **make.sh**: Main build script. Automatically uses Docker if available, otherwise performs a local build.
-- **src/clone.sh**: Clone the Osmosis repo at a given tag into the `osmosis` folder.
-- **src/patch.sh**: Apply the patch to enable launcher mode in osmosisd.
-- **src/make.sh**: Build the modified Osmosis sources locally (requires Go).
-- **src/docker_make.sh**: Build the patched binary using Docker.
-- **src/build.sh**: Advanced build for different environments.
+- **make.sh**: Main build script. Detects Docker and delegates to the appropriate build method. Accepts all named parameters.
+- **src/clone.sh**: Clone the Osmosis repo at a given tag into the target directory. Usage: `src/clone.sh --tag <tag> --target-dir <dir>`
+- **src/patch.sh**: Apply the launcher patch to the Osmosis sources. Usage: `src/patch.sh --target-dir <dir>`
+- **src/make.sh**: Build the modified Osmosis sources locally (requires Go). Usage: `src/make.sh --os <os> --arch <arch> --target-dir <dir>`
+- **src/docker_make.sh**: Build the patched binary using Docker. Usage: `src/docker_make.sh --os <os> --arch <arch> --target-dir <dir>`
+- **src/build.sh**: Advanced build for different environments. Handles Go installation and cross-compilation. Usage: `src/build.sh --os <os> --arch <arch> --target-dir <dir>`
 - **src/tags.sh**: List available tags from the Osmosis repo.
 - **src/last_tag.sh**: Show the latest available tag.
 - **src/retrieve_required_go_version.sh**: Retrieve the required Go version from Osmosis's go.mod.
 - **src/launcher.go**: Source code for the launcher mode injected into osmosisd.
+- **src/parse_args.sh**: Centralized argument parsing for all scripts.
+- **src/resolve_os.sh** / **src/resolve_arch.sh**: Detect and validate supported OS/architecture.
+- **src/validate_platform.sh**: Check if a platform combination is supported (uses `supported_platforms.json`).
+- **src/get_available_ram_gb.sh**: Detect available RAM for Docker builds.
 
 Test scripts are available in the `tests/` folder to validate each step.
 

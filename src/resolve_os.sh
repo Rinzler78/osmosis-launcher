@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.."
+ROOT_DIR="$SCRIPT_DIR"
 SUPPORTED_PLATFORMS_JSON="$ROOT_DIR/supported_platforms.json"
 
 UNAME_S="$1"

@@ -1,14 +1,48 @@
 #!/bin/bash
 set -e
 
-# Usage: download_go_archive.sh <go_version> [go_os] [go_arch]
+# Usage: download_go_archive.sh --go-version <go_version> [--os <go_os>] [--arch <go_arch>]
+# Ou en positionnel : <go_version> [go_os] [go_arch] (pour compatibilité)
 
-GO_VERSION="$1"
-GO_OS="$2"
-GO_ARCH="$3"
+GO_VERSION=""
+GO_OS=""
+GO_ARCH=""
+
+# Parsing des arguments nommés
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --go-version)
+      GO_VERSION="$2"
+      shift 2
+      ;;
+    --os)
+      GO_OS="$2"
+      shift 2
+      ;;
+    --arch)
+      GO_ARCH="$2"
+      shift 2
+      ;;
+    --*)
+      echo "[FAIL] Unknown option: $1"
+      exit 1
+      ;;
+    *)
+      # Arguments positionnels (pour compatibilité)
+      if [ -z "$GO_VERSION" ]; then
+        GO_VERSION="$1"
+      elif [ -z "$GO_OS" ]; then
+        GO_OS="$1"
+      elif [ -z "$GO_ARCH" ]; then
+        GO_ARCH="$1"
+      fi
+      shift
+      ;;
+  esac
+done
 
 if [ -z "$GO_VERSION" ]; then
-  echo "Usage: $0 <go_version> [go_os] [go_arch]"
+  echo "Usage: $0 --go-version <go_version> [--os <go_os>] [--arch <go_arch>]"
   exit 1
 fi
 

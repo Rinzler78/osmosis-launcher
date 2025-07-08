@@ -1,12 +1,14 @@
 #!/bin/bash
+
+. "$(dirname "$0")/utils.sh"
 # Test script for cross-platform build via make.sh
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MAKE_SH="$SCRIPT_DIR/../make.sh"
 LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
-
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
+
 echo_title() {
   bash $FORMAT_TITLE_SH "$(basename "$0")"
 }
@@ -27,15 +29,14 @@ rm -rf buildx-out
 TAG=$($LAST_TAG_SH)
 GO_OS="linux"
 GO_ARCH="amd64"
-if ! bash "$MAKE_SH" "$TAG" "$GO_OS" "$GO_ARCH"; then
-  echo "[FAIL] make.sh failed to build osmosisd for $GO_OS/$GO_ARCH."
-  exit 1
+
+if ! bash "$MAKE_SH" --tag "$TAG" --os "$GO_OS" --arch "$GO_ARCH"; then
+  fail "make.sh failed to build osmosisd for $GO_OS/$GO_ARCH."
 fi
 
 # 2. Check binary
 if [ ! -f buildx-out/build/osmosisd ]; then
-  echo "[FAIL] osmosisd binary not found after cross-platform make.sh."
-  exit 1
+  fail "osmosisd binary not found after cross-platform make.sh."
 fi
 
-echo "[OK] osmosisd cross-platform build test passed." 
+pass "osmosisd cross-platform build test passed." 

@@ -2,9 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TARGET_DIR="$1"
-GO_OS="${2-}"
-GO_ARCH="${3-}"
+source "$SCRIPT_DIR/parse_args.sh" "$@"
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "[FAIL] Directory $TARGET_DIR does not exist."
