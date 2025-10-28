@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(./tests/test_all.sh)",
+      "Bash(go mod download:*)",
+      "Bash(./tests/test_06_build.sh)",
+      "Bash(if [ -f osmosisd ])",
+      "Bash(then ./osmosisd version)",
+      "Bash(else echo \"osmosisd not found\")",
+      "Bash(fi)",
+      "Bash(then echo \"version\")",
+      "Bash(./osmosisd:*)",
+      "Bash(./tests/test_07_patch.sh:*)",
+      "Bash(tee:*)",
+      "Read(//private/tmp/**)",
+      "Bash(pkill:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(cat:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
