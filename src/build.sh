@@ -83,9 +83,27 @@ trap cleanup EXIT
 
 # Compile the binary pour la plateforme cible
 pushd "$TARGET_DIR"
-export GOPROXY=direct
+
+# Use default GOPROXY if not set, allows fallback to proxy.golang.org
+if [ -z "$GOPROXY" ]; then
+  export GOPROXY="https://proxy.golang.org,direct"
+fi
+
 export GOOS="$GO_OS"
 export GOARCH="$GO_ARCH"
+
+# Download dependencies first with proper error handling
+echo "[INFO] Downloading Go dependencies..."
+if ! go mod download 2>&1; then
+  echo "[WARN] Initial download failed, attempting go mod tidy..."
+  if ! go mod tidy 2>&1; then
+    echo "[ERROR] go mod tidy failed"
+  fi
+  if ! go mod download 2>&1; then
+    echo "[ERROR] Dependency download failed after tidy, build may fail"
+  fi
+fi
+
 echo "[INFO] Compiling osmosisd binary for $GO_OS/$GO_ARCH..."
 make build
 popd

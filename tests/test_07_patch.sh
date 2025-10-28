@@ -57,7 +57,7 @@ fi
 # 6. Build the patched repo
 
 export GO_VERSION_SH="$ROOT_DIR/src/retrieve_required_go_version.sh"
-if ! bash "$BUILD_SH" "$TEST_DIR"; then
+if ! bash "$BUILD_SH" --target-dir "$TEST_DIR"; then
   fail "build.sh failed after patch."
 fi
 
