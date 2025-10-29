@@ -15,7 +15,7 @@ echo_title() {
 
 # Clean up on exit
 cleanup() {
-  rm -rf buildx-out
+  rm -f osmosisd
 }
 trap 'echo_title; cleanup' EXIT
 
@@ -23,19 +23,19 @@ echo_title
 echo "[INFO] Test make.sh (cross-platform build)"
 
 # Clean initial state
-rm -rf buildx-out
+rm -f osmosisd
 
 # 1. Build for linux/amd64
 TAG=$($LAST_TAG_SH)
 GO_OS="linux"
 GO_ARCH="amd64"
 
-if ! bash "$MAKE_SH" --tag "$TAG" --os "$GO_OS" --arch "$GO_ARCH"; then
+if ! bash "$MAKE_SH" "$TAG" "$GO_OS" "$GO_ARCH"; then
   fail "make.sh failed to build osmosisd for $GO_OS/$GO_ARCH."
 fi
 
 # 2. Check binary
-if [ ! -f buildx-out/build/osmosisd ]; then
+if [ ! -f osmosisd ]; then
   fail "osmosisd binary not found after cross-platform make.sh."
 fi
 

@@ -94,9 +94,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - Release workflow defined in `.github/workflows/release.yml`
 
 **Tag Management:**
-- `sync_osmosis_tags.sh`: Syncs with upstream Osmosis tags
 - `clean_unpushed_tags.sh`: Cleanup utility for local tags
-- `delete_non_matching_tags.sh`: Remove non-matching tag patterns
 
 ## Domain Context
 

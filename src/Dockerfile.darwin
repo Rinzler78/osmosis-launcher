@@ -1,0 +1,11 @@
+FROM ghcr.io/goreleaser/goreleaser-cross:v1.23
+
+# Install additional tools needed
+RUN apt-get update && apt-get install -y jq bash wget
+
+# Copy scripts
+COPY src/*.* /scripts/
+ENV PATH="/scripts:${PATH}"
+
+WORKDIR /workspace
+CMD ["/bin/bash"]

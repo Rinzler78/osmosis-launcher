@@ -7,7 +7,7 @@ COPY src/*.* /scripts/
 
 # Ajouter /scripts au PATH pour tous les shells
 ENV PATH="/scripts:${PATH}"
-
+# ENV PATH="/workspace/src:${PATH}"
 # Dossier de travail par défaut
 WORKDIR /workspace
 

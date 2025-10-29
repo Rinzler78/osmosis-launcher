@@ -1,2 +1,21 @@
+# Build outputs
 osmosisd-launcher
 osmosisd
+
+# Downloaded libraries
+lib/*.a
+
+# Build artifacts and temporary directories
+osmosis/
+test_build_dir/
+tests/.tmp/
+
+# Temporary files and logs
+*.log
+*.tmp
+/tmp/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride

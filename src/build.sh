@@ -35,6 +35,14 @@ if ! "$VALIDATE_PLATFORM_SH" "$GO_OS" "$GO_ARCH"; then
   exit 1
 fi
 
+# Delegate to build_darwin.sh only for cross-compilation (Linux -> Darwin)
+# For native Darwin builds, continue with standard build process below
+CURRENT_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+if [ "$GO_OS" = "darwin" ] && [ "$CURRENT_OS" != "darwin" ]; then
+  echo "[INFO] Delegating to build_darwin.sh for Darwin cross-compilation..."
+  exec "$SCRIPT_DIR/build_darwin.sh" "$@"
+fi
+
 # Backup the initial environment
 OLD_PATH="$PATH"
 OLD_GOROOT="$GOROOT"

@@ -43,7 +43,7 @@ elif [ $# -eq 3 ]; then
   TAG="$1"
   GO_OS="$2"
   GO_ARCH="$3"
-  bash "$SCRIPT_DIR/src/docker_make.sh" "$GO_OS" "$GO_ARCH" "$TAG"
+  bash "$SCRIPT_DIR/src/docker_make.sh" --os "$GO_OS" --arch "$GO_ARCH" --tag "$TAG"
 else
   usage
 fi 
