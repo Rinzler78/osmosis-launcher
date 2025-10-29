@@ -18,10 +18,7 @@ jobs:
       - name: Run all test scripts
         run: |
           chmod +x tests/*.sh
-          for test in tests/*.sh; do
-            echo "[INFO] Running $test"
-            bash "$test"
-          done
+          tests/test_all.sh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
