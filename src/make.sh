@@ -46,13 +46,6 @@ else
   fi
 fi
 
-# Dossier cible pour le clone et le build (paramètre 4 ou 'osmosis' par défaut)
-if [ -n "${4-}" ]; then
-  TARGET_DIR="$4"
-else
-  TARGET_DIR="osmosis"
-fi
-
 # Clone the repo
 if ! "$SCRIPT_DIR/clone.sh" --tag "$TAG" --target-dir "$TARGET_DIR"; then
   echo "Cannot clone the repo"
