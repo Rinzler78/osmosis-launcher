@@ -1,66 +1,95 @@
 #!/bin/bash
-# Clones the Osmosis repo at a given tag in a target directory
-# Usage: ./clone.sh --tag <tag> --target-dir <dir>
+# Clones the Osmosis repo at a given tag in a target directory.
+# Usage: ./clone.sh [--force-reset] --tag <tag> --target-dir <dir>
 
-set -e
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$SCRIPT_DIR/parse_args.sh" "$@"
 export GIT_LFS_SKIP_SMUDGE=1
-REPO_URL=$(cat "$SCRIPT_DIR/repo_url.txt")
+
+FORCE_RESET=0
+PARSE_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force-reset)
+      FORCE_RESET=1
+      shift
+      ;;
+    *)
+      PARSE_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# shellcheck disable=SC1091
+if [[ ${#PARSE_ARGS[@]} -gt 0 ]]; then
+  source "$SCRIPT_DIR/parse_args.sh" "${PARSE_ARGS[@]}"
+else
+  source "$SCRIPT_DIR/parse_args.sh"
+fi
+
+REPO_URL="$(<"$SCRIPT_DIR/repo_url.txt")"
 DEFAULT_BRANCH="main"
 
-# If TAG is not defined, we take the last tag
-if [ -z "$TAG" ]; then
-  TAG="$($SCRIPT_DIR/last_tag.sh)"
-  echo "[INFO] No tag provided, using last tag: $TAG"
-else
-  # Check if the tag exists
-  if ! "$SCRIPT_DIR/tags.sh" | grep -Fxq "$TAG"; then
-    echo "[ERROR] The specified tag '$TAG' was not found in the Osmosis repository. Use './src/tags.sh' to list available tags."
-    exit 3
+if ! "$SCRIPT_DIR/tags.sh" | grep -Fxq "$TAG"; then
+  echo "[ERROR] The specified tag '$TAG' was not found in the Osmosis repository. Use './src/tags.sh' to list available tags." >&2
+  exit 3
+fi
+
+ensure_clean_repo_or_fail() {
+  if ! git diff --quiet || ! git diff --cached --quiet || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+    if [[ $FORCE_RESET -eq 1 ]]; then
+      echo "[WARN] Forcing reset of local changes in '$TARGET_DIR'."
+      git reset --hard HEAD
+      git clean -fd
+    else
+      echo "[ERROR] Target directory '$TARGET_DIR' contains local changes. Re-run with --force-reset to allow a destructive reset." >&2
+      exit 1
+    fi
   fi
-fi
+}
 
-# If TARGET_DIR is not defined, use osmosis
-if [ -z "$TARGET_DIR" ]; then
-  TARGET_DIR="osmosis"
-  echo "[INFO] No target directory provided, using default: $TARGET_DIR"
-fi
+if [[ -d "$TARGET_DIR/.git" ]]; then
+  echo "[INFO] Target directory '$TARGET_DIR' already exists. Refreshing repository state for tag '$TAG'."
+  pushd "$TARGET_DIR" >/dev/null
 
-if [ -d "$TARGET_DIR/.git" ]; then
-  echo "[INFO] Target directory $TARGET_DIR already exists. Trying to fetch and checkout tag $TAG."
-  cd "$TARGET_DIR"
-  ORIGIN_URL=$(git remote get-url origin)
-  if [ "$ORIGIN_URL" != "$REPO_URL" ]; then
-    echo "[ERROR] Remote 'origin' URL ($ORIGIN_URL) does not match expected ($REPO_URL)."
+  ORIGIN_URL="$(git remote get-url origin)"
+  if [[ "$ORIGIN_URL" != "$REPO_URL" ]]; then
+    echo "[ERROR] Remote 'origin' URL ($ORIGIN_URL) does not match expected ($REPO_URL)." >&2
     exit 1
   fi
-  CURRENT_REF=$(git symbolic-ref --short -q HEAD || git describe --tags --exact-match 2>/dev/null)
-  if [ "$CURRENT_REF" = "$TAG" ]; then
-    echo "[INFO] Already on tag/branch $TAG. Performing hard reset to ensure clean state."
-    git fetch
-    git reset --hard "$TAG"
+
+  git fetch --all --tags
+  ensure_clean_repo_or_fail
+
+  CURRENT_TAG="$(git describe --tags --exact-match 2>/dev/null || true)"
+  if [[ "$CURRENT_TAG" = "$TAG" ]]; then
+    echo "[INFO] Already on tag '$TAG'. Repository left unchanged."
+    popd >/dev/null
     exit 0
   fi
-  git fetch --all --tags
+
   git checkout "$TAG"
-  git reset --hard "$TAG"
+  if [[ $FORCE_RESET -eq 1 ]]; then
+    git reset --hard "$TAG"
+  fi
+  popd >/dev/null
   exit 0
 fi
 
-# Clone the main branch then checkout the tag
-echo "[INFO] Cloning Osmosis repo to $TARGET_DIR"
+echo "[INFO] Cloning Osmosis repo to '$TARGET_DIR'"
 git clone --branch "$DEFAULT_BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR"
-cd "$TARGET_DIR"
-echo "[INFO] Fetching tags and checking out tag $TAG"
-git fetch --all --tags > /dev/null 2>&1
-git checkout "$TAG" > /dev/null 2>&1
-git reset --hard "$TAG" > /dev/null 2>&1
-cd -
+pushd "$TARGET_DIR" >/dev/null
+echo "[INFO] Fetching tags and checking out tag '$TAG'"
+git fetch --all --tags >/dev/null 2>&1
+git checkout "$TAG" >/dev/null 2>&1
+git reset --hard "$TAG" >/dev/null 2>&1
+popd >/dev/null
 
-if [ -d "$TARGET_DIR" ]; then
-  echo "[OK] Osmosis repo cloned in $TARGET_DIR at version $TAG."
+if [[ -d "$TARGET_DIR" ]]; then
+  echo "[OK] Osmosis repo cloned in '$TARGET_DIR' at version '$TAG'."
 else
-  echo "[ERROR] Cloning failed."
+  echo "[ERROR] Cloning failed." >&2
   exit 2
-fi 
+fi

@@ -1,111 +1,121 @@
 #!/bin/bash
 
+# shellcheck source=./utils.sh
 . "$(dirname "$0")/utils.sh"
-# Test script for src/clone.sh
-# Usage: ./test_clone.sh
+
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.tmp"
+ROOT_DIR_BASE="$SCRIPT_DIR/.tmp"
+mkdir -p "$ROOT_DIR_BASE"
+ROOT_DIR="$(mktemp -d "$ROOT_DIR_BASE/test_04_clone.XXXXXX")"
 CLONE_SH="$SCRIPT_DIR/../src/clone.sh"
 LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
-TAG=$($LAST_TAG_SH)
-TARGET_DIR="test_clone_dir"
+TAG="$($LAST_TAG_SH)"
+TARGET_DIR="$ROOT_DIR/test_clone_dir"
 
 echo_title() {
-  bash $FORMAT_TITLE_SH "$(basename "$0")"
+  bash "$FORMAT_TITLE_SH" "$(basename "$0")"
 }
 
 cleanup() {
   rm -rf "$ROOT_DIR"
-  rm -rf "$TARGET_DIR"
 }
 
 echo_title
-
-echo "[INFO] Test clone.sh (paramètres nommés)"
+echo "[INFO] Test clone.sh with named parameters"
 
 trap cleanup EXIT
 
-# Clean initial state
-rm -rf "$TARGET_DIR"
-
 if ! bash "$CLONE_SH" --tag "$TAG" --target-dir "$TARGET_DIR"; then
-  fail "clone.sh failed with named parameters."
+  fail "clone.sh failed with named parameters"
 fi
 
-if [ ! -d "$TARGET_DIR/.git" ]; then
-  fail "Target directory $TARGET_DIR was not created by clone.sh."
+if [[ ! -d "$TARGET_DIR/.git" ]]; then
+  fail "Target directory '$TARGET_DIR' was not created by clone.sh"
 fi
 
-pass "clone.sh test with named parameters passed."
+pass "clone.sh test with named parameters passed"
 
-# 1. Test with tag and directory
 TEST_DIR1="$ROOT_DIR/test1"
-TAG1="$TAG"
-"$CLONE_SH" --tag "$TAG1" --target-dir "$TEST_DIR1"
-if [ ! -d "$TEST_DIR1/.git" ]; then
-  fail "Test 1: Repo not cloned in $TEST_DIR1"
+bash "$CLONE_SH" --tag "$TAG" --target-dir "$TEST_DIR1"
+[[ -d "$TEST_DIR1/.git" ]] || fail "Test 1: Repo not cloned in '$TEST_DIR1'"
+if (cd "$TEST_DIR1" && git describe --tags | grep "$TAG" >/dev/null); then
+  pass "Test 1: Clone with tag and dir => OK"
+else
+  fail "Test 1: Tag '$TAG' not checked out in '$TEST_DIR1'"
 fi
-CUR_TAG=$(cd "$TEST_DIR1" && git rev-parse --abbrev-ref HEAD || git describe --tags)
-if ! (cd "$TEST_DIR1" && git describe --tags | grep "$TAG1" > /dev/null); then
-  fail "Test 1: Tag $TAG1 not checked out in $TEST_DIR1"
-fi
-pass "Test 1: Clone with tag and dir => OK"
 
-# 2. Test without tag (should take the last tag)
 TEST_DIR2="$ROOT_DIR/test2"
-"$CLONE_SH" --target-dir "$TEST_DIR2"
-if [ ! -d "$TEST_DIR2/.git" ]; then
-  fail "Test 2: Repo not cloned in $TEST_DIR2"
+bash "$CLONE_SH" --target-dir "$TEST_DIR2"
+[[ -d "$TEST_DIR2/.git" ]] || fail "Test 2: Repo not cloned in '$TEST_DIR2'"
+if (cd "$TEST_DIR2" && git describe --tags | grep "$TAG" >/dev/null); then
+  pass "Test 2: Clone with no tag => OK"
+else
+  fail "Test 2: Latest tag '$TAG' not checked out in '$TEST_DIR2'"
 fi
-if ! (cd "$TEST_DIR2" && git describe --tags | grep "$TAG" > /dev/null); then
-  fail "Test 2: Tag $TAG not checked out in $TEST_DIR2"
-fi
-pass "Test 2: Clone with no tag => OK"
 
-# 3. Test without directory (should clone in osmosis)
-DEFAULT_DIR="osmosis"
-rm -rf "$DEFAULT_DIR"
-"$CLONE_SH" --tag "$TAG"
-if [ ! -d "$DEFAULT_DIR/.git" ]; then
-  fail "Test 3: Repo not cloned in $DEFAULT_DIR"
+WORKSPACE_DEFAULT_1="$ROOT_DIR/workspace-default-1"
+mkdir -p "$WORKSPACE_DEFAULT_1"
+(
+  cd "$WORKSPACE_DEFAULT_1"
+  bash "$CLONE_SH" --tag "$TAG"
+)
+[[ -d "$WORKSPACE_DEFAULT_1/osmosis/.git" ]] || fail "Test 3: Repo not cloned in 'osmosis'"
+if (cd "$WORKSPACE_DEFAULT_1/osmosis" && git describe --tags | grep "$TAG" >/dev/null); then
+  pass "Test 3: Clone with no dir => OK"
+else
+  fail "Test 3: Tag '$TAG' not checked out in 'osmosis'"
 fi
-if ! (cd "$DEFAULT_DIR" && git describe --tags | grep "$TAG" > /dev/null); then
-  fail "Test 3: Tag $TAG not checked out in $DEFAULT_DIR"
-fi
-pass "Test 3: Clone with no dir => OK"
 
-# 4. Test without any argument (should clone the last tag in osmosis)
-rm -rf "$DEFAULT_DIR"
-"$CLONE_SH"
-if [ ! -d "$DEFAULT_DIR/.git" ]; then
-  fail "Test 4: Repo not cloned in $DEFAULT_DIR"
+WORKSPACE_DEFAULT_2="$ROOT_DIR/workspace-default-2"
+mkdir -p "$WORKSPACE_DEFAULT_2"
+(
+  cd "$WORKSPACE_DEFAULT_2"
+  bash "$CLONE_SH"
+)
+[[ -d "$WORKSPACE_DEFAULT_2/osmosis/.git" ]] || fail "Test 4: Repo not cloned in 'osmosis'"
+if (cd "$WORKSPACE_DEFAULT_2/osmosis" && git describe --tags | grep "$TAG" >/dev/null); then
+  pass "Test 4: Clone with no args => OK"
+else
+  fail "Test 4: Latest tag '$TAG' not checked out in 'osmosis'"
 fi
-if ! (cd "$DEFAULT_DIR" && git describe --tags | grep "$TAG" > /dev/null); then
-  fail "Test 4: Tag $TAG not checked out in $DEFAULT_DIR"
-fi
-pass "Test 4: Clone with no args => OK"
 
-# 5. Test with an invalid tag (should fail)
 INVALID_TAG="v0.0.0-THIS-TAG-DOES-NOT-EXIST"
-OUTPUT=$("$CLONE_SH" --tag "$INVALID_TAG" --target-dir "$ROOT_DIR/should_not_exist" 2>&1) && {
+if OUTPUT="$(bash "$CLONE_SH" --tag "$INVALID_TAG" --target-dir "$ROOT_DIR/should_not_exist" 2>&1)"; then
   fail "Test 5: Script did not fail with invalid tag"
-}
-echo "$OUTPUT" | grep -q "was not found in the Osmosis repository." || {
+fi
+if echo "$OUTPUT" | grep -q "was not found in the Osmosis repository."; then
+  pass "Test 5: Invalid tag is properly rejected => OK"
+else
   fail "Test 5: Error message not found for invalid tag"
-}
-pass "Test 5: Invalid tag is properly rejected => OK"
+fi
 
-# 6. Test if already on the right tag, script exits immediately
 TEST_DIR3="$ROOT_DIR/test3"
-"$CLONE_SH" --tag "$TAG" --target-dir "$TEST_DIR3"
-# Re-run the script, it should detect that we are already on the right tag and exit without error
-OUTPUT2=$("$CLONE_SH" --tag "$TAG" --target-dir "$TEST_DIR3" 2>&1)
-echo "$OUTPUT2" | grep -q "Already on tag/branch $TAG" || {
-  fail "Test 6: Script did not detect already on tag/branch"
-}
-pass "Test 6: Already on tag/branch => OK"
+bash "$CLONE_SH" --tag "$TAG" --target-dir "$TEST_DIR3"
+OUTPUT2="$(bash "$CLONE_SH" --tag "$TAG" --target-dir "$TEST_DIR3" 2>&1)"
+if echo "$OUTPUT2" | grep -q "Already on tag '$TAG'. Repository left unchanged."; then
+  pass "Test 6: Already on tag/branch => OK"
+else
+  fail "Test 6: Script did not detect already-on-tag state"
+fi
 
-pass "ALL TESTS PASSED" 
+echo "dirty" >> "$TEST_DIR3/README.md"
+if bash "$CLONE_SH" --tag "$TAG" --target-dir "$TEST_DIR3" >"$ROOT_DIR/clone-dirty.out" 2>&1; then
+  fail "Test 7: Dirty repositories must require --force-reset"
+fi
+if grep -Fq "contains local changes. Re-run with --force-reset" "$ROOT_DIR/clone-dirty.out"; then
+  pass "Test 7: Dirty repository protection => OK"
+else
+  fail "Test 7: Dirty repository protection message missing"
+fi
+
+bash "$CLONE_SH" --force-reset --tag "$TAG" --target-dir "$TEST_DIR3" >/dev/null
+if (cd "$TEST_DIR3" && ! git diff --quiet); then
+  fail "Test 8: --force-reset did not restore a clean worktree"
+fi
+pass "Test 8: --force-reset allows explicit destructive reset => OK"
+
+pass "ALL TESTS PASSED"

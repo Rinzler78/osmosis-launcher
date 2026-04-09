@@ -1,122 +1,97 @@
 #!/bin/bash
 
+# shellcheck source=./utils.sh
 . "$(dirname "$0")/utils.sh"
-# Test script for src/patch.sh
-# Usage: ./test_patch.sh
 
-set -e
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.tmp"
+ROOT_DIR="$SCRIPT_DIR/.tmp/patch-tests"
 PATCH_SH="$SCRIPT_DIR/../src/patch.sh"
-CLONE_SH="$SCRIPT_DIR/../src/clone.sh"
-LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
-LAUNCHER_GO_SRC="$SCRIPT_DIR/../src/launcher.go"
-BUILD_SH="$SCRIPT_DIR/../src/build.sh"
-
-FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
-echo_title() {
-  bash $FORMAT_TITLE_SH "$(basename "$0")"
-}
-
-# Clean up on exit
-cleanup() {
-  rm -rf "$ROOT_DIR/test_patch"
-  rm -f launcher.go
-}
-
-echo_title
-
-echo "[INFO] Test patching"
-
-trap 'echo_title; cleanup' EXIT
-
-# Clean initial state
-rm -rf "$ROOT_DIR/test_patch"
-rm -f launcher.go
-
-# 1. Clone repo
-TAG=$($LAST_TAG_SH)
-TEST_DIR="$ROOT_DIR/test_patch"
-$CLONE_SH --tag "$TAG" --target-dir "$TEST_DIR"
-
-# 3. Run patch.sh
-if ! bash "$PATCH_SH" --target-dir "$TEST_DIR"; then
-  fail "patch.sh failed."
-fi
-
-# 4. Check launcher.go copied
-if [ ! -f "$TEST_DIR/cmd/osmosisd/launcher.go" ]; then
-  fail "launcher.go not copied to cmd/osmosisd."
-fi
-
-# 5. Check main.go modified
-if ! grep -q 'wait_for_launcher()' "$TEST_DIR/cmd/osmosisd/main.go"; then
-  fail "main.go not patched with wait_for_launcher()."
-fi
-
-# 6. Build the patched repo
-
-export GO_VERSION_SH="$ROOT_DIR/src/retrieve_required_go_version.sh"
-if ! bash "$BUILD_SH" --target-dir "$TEST_DIR"; then
-  fail "build.sh failed after patch."
-fi
-
-# 7. Check osmosisd version with and without --launcher
-OSMOSISD_VERSION=$(./osmosisd version 2>/dev/null | head -n 1)
-OSMOSISD_LAUNCHER_VERSION=$(./osmosisd --launcher version 2>/dev/null | head -n 1)
-if [ "$OSMOSISD_VERSION" != "$OSMOSISD_LAUNCHER_VERSION" ]; then
-  fail "osmosisd version ($OSMOSISD_VERSION) != osmosisd --launcher version ($OSMOSISD_LAUNCHER_VERSION)"
-fi
-
-pass "osmosisd version is the same with and without --launcher: $OSMOSISD_VERSION"
-
-# 8. Check error on non-existent directory
-if bash "$PATCH_SH" --target-dir "/tmp/does_not_exist_$$" 2>&1 | grep -q "\[FAIL\] Target directory .\+ does not exist."; then
-  pass "Error message found for non-existent directory."
-else
-  fail "Error message not found for non-existent directory."
-fi
-
-# 9. Error: main.go missing
-BROKEN_DIR="$ROOT_DIR/test_patch_broken"
-$CLONE_SH --tag "$TAG" --target-dir "$BROKEN_DIR"
-rm -f "$BROKEN_DIR/cmd/osmosisd/main.go"
-cp "$LAUNCHER_GO_SRC" launcher.go
-if bash "$PATCH_SH" --target-dir "$BROKEN_DIR"; then
-  fail "patch.sh did not fail with missing main.go."
-fi
-if ! bash "$PATCH_SH" --target-dir "$BROKEN_DIR" 2>&1 | grep -q "does not exist"; then
-  fail "Error message not found for missing main.go."
-fi
-rm -rf "$BROKEN_DIR"
-
-pass "patch.sh fails as expected with missing main.go."
-
-pass "ALL TESTS PASSED"
-
-TAG=$($LAST_TAG_SH)
-TARGET_DIR="test_patch_dir"
 
 cleanup() {
-  rm -rf "$TARGET_DIR"
+  rm -rf "$ROOT_DIR"
 }
+
+make_tree() {
+  local target_dir="$1"
+  local main_body="$2"
+
+  mkdir -p "$target_dir/cmd/osmosisd"
+  printf '%s\n' "$main_body" > "$target_dir/cmd/osmosisd/main.go"
+}
+
 trap cleanup EXIT
+cleanup
+mkdir -p "$ROOT_DIR"
 
-echo_title
+SUCCESS_DIR="$ROOT_DIR/success"
+make_tree "$SUCCESS_DIR" 'package main
 
-echo "[INFO] Test patch.sh (paramètre nommé)"
+func main() {
+	rootCmd := cmd.NewRootCmd()
+	_ = rootCmd
+}'
 
-# Clean initial state
-rm -rf "$TARGET_DIR"
-
-# Clone d'abord
-if ! bash "$CLONE_SH" --tag "$TAG" --target-dir "$TARGET_DIR"; then
-  fail "clone.sh failed for patch test."
+bash "$PATCH_SH" --target-dir "$SUCCESS_DIR" >/dev/null
+if [ -f "$SUCCESS_DIR/cmd/osmosisd/launcher.go" ]; then
+  pass "patch.sh copies launcher.go into the Osmosis tree"
+else
+  fail "patch.sh did not copy launcher.go"
 fi
 
-# Patch
-if ! bash "$PATCH_SH" --target-dir "$TARGET_DIR"; then
-  fail "patch.sh failed with named parameter."
+if grep -Fq 'wait_for_launcher()' "$SUCCESS_DIR/cmd/osmosisd/main.go"; then
+  pass "patch.sh injects wait_for_launcher()"
+else
+  fail "patch.sh did not inject wait_for_launcher()"
 fi
 
-pass "patch.sh test with named parameter passed." 
+bash "$PATCH_SH" --target-dir "$SUCCESS_DIR" >/dev/null
+WAIT_CALL_COUNT="$(grep -Fc 'wait_for_launcher()' "$SUCCESS_DIR/cmd/osmosisd/main.go")"
+if [ "$WAIT_CALL_COUNT" = "1" ]; then
+  pass "patch.sh is idempotent"
+else
+  fail "patch.sh duplicated the launcher injection"
+fi
+
+MISSING_INJECTION_DIR="$ROOT_DIR/missing-injection"
+make_tree "$MISSING_INJECTION_DIR" 'package main
+
+func main() {
+	println("no injection point here")
+}'
+
+if bash "$PATCH_SH" --target-dir "$MISSING_INJECTION_DIR" >"$ROOT_DIR/missing.out" 2>&1; then
+  fail "patch.sh must fail when the injection point is missing"
+fi
+if grep -Fq "Injection point 'cmd.NewRootCmd()' was not found" "$ROOT_DIR/missing.out"; then
+  pass "patch.sh reports a missing injection point"
+else
+  fail "patch.sh did not explain the missing injection point"
+fi
+
+SPACED_DIR="$ROOT_DIR/dir with spaces"
+make_tree "$SPACED_DIR" 'package main
+
+func main() {
+	rootCmd := cmd.NewRootCmd()
+	_ = rootCmd
+}'
+
+bash "$PATCH_SH" --target-dir "$SPACED_DIR" >/dev/null
+if grep -Fq 'wait_for_launcher()' "$SPACED_DIR/cmd/osmosisd/main.go"; then
+  pass "patch.sh handles target directories containing spaces"
+else
+  fail "patch.sh failed for a target directory containing spaces"
+fi
+
+if bash "$PATCH_SH" --target-dir "$ROOT_DIR/does-not-exist" >"$ROOT_DIR/not-found.out" 2>&1; then
+  fail "patch.sh must fail for a missing target directory"
+fi
+if grep -Fq "Target directory '$ROOT_DIR/does-not-exist' does not exist." "$ROOT_DIR/not-found.out"; then
+  pass "patch.sh reports missing target directories clearly"
+else
+  fail "patch.sh missing-directory error is unclear"
+fi
+
+pass "patch.sh tests passed."

@@ -50,7 +50,7 @@ cd osmosis-launcher
 ```
 
 ## Parameter Handling
-All scripts now use a unified and modern parameter system, handled by `src/parse_args.sh`. This means you can use named options everywhere, and defaults are smartly chosen if you omit them.
+All user-facing shell scripts use named options by default. Shared option parsing is handled by `src/parse_args.sh`, which now rejects unknown options and missing values instead of silently ignoring them.
 
 **Common parameters:**
 - `--tag <tag>`: Osmosis version to use (default: latest tag)
@@ -65,9 +65,11 @@ src/patch.sh --target-dir myosmo
 src/build.sh --os linux --arch amd64 --target-dir myosmo
 src/docker_make.sh --os linux --arch amd64 --target-dir myosmo
 ```
-If you omit a parameter, the script will choose a sensible default (e.g., latest tag, current platform, etc.).
+If you omit a parameter, the script will choose a sensible default where that script supports it, for example the latest tag or the current platform.
 
-Some scripts (like `download_go_archive.sh`) still accept positional arguments for backward compatibility, but named options are preferred.
+`src/clone.sh` now protects existing worktrees from implicit destructive resets. Re-run it with `--force-reset` only when you explicitly want local changes removed.
+
+Some scripts, including the root `./make.sh`, still accept limited positional compatibility forms for existing automation, but named options are the canonical interface.
 
 ## Quick Start
 
@@ -82,8 +84,8 @@ The fastest way to get started is to use the main `make.sh` script at the root o
 - Builds the binary for your current platform (using Docker if available, otherwise locally)
 - Produces the `osmosisd` binary in the project root (or in `./buildx-out/build/` for cross-builds)
 
-### Advanced (with parameters)
-You can specify the version, platform, and target directory if needed:
+### Canonical named interface
+You can specify the version, platform, and target directory explicitly:
 ```console
 ./make.sh --tag v12.3.0 --os linux --arch amd64 --target-dir myosmo
 ```
@@ -92,25 +94,36 @@ You can specify the version, platform, and target directory if needed:
 - `--arch <arch>`: Target architecture (default: auto-detected)
 - `--target-dir <dir>`: Working directory (default: `osmosis`)
 
-**Example:**
+`./make.sh` also supports `--docker` to require Docker and `--local` to force the local workflow. Without either flag it auto-selects Docker when available, otherwise it falls back to the local workflow.
+
+**Positional compatibility:**
 ```console
-./make.sh --tag v12.3.0 --os linux --arch amd64
+./make.sh v12.3.0
+./make.sh v12.3.0 linux amd64 myosmo
 ```
+
+Do not mix named and positional forms in the same invocation.
 
 You can then launch osmosisd in launcher mode:
 ```console
 ./osmosisd --launcher
 ```
 
+Launcher stdin commands now preserve quoted arguments and escaped spaces. For example:
+```console
+printf 'tx bank send "memo with spaces"\n' | ./osmosisd --launcher
+printf 'query wasm contract-state smart osmo\ one\n' | ./osmosisd --launcher
+```
+
 For more control or to run steps individually, see the [Parameter Handling](#parameter-handling) and [Scripts Details](#scripts-details) sections.
 
 ## Build Process
-The main `make.sh` script orchestrates the build. It automatically detects if Docker is available:
+The main `make.sh` script orchestrates the build. It automatically detects if Docker is available unless you force a mode:
 
 - **With Docker:** Uses `src/docker_make.sh` to build in a container for maximum reproducibility and no local Go install required.
 - **Without Docker:** Uses `src/make.sh` for a local build (requires Go installed locally).
 
-All scripts accept the same named parameters, and will auto-detect missing values:
+All user-facing build scripts accept the same named parameters and auto-detect missing values where supported:
 - If `--tag` is omitted, the latest tag is used.
 - If `--os` or `--arch` are omitted, the current platform is detected.
 - If `--target-dir` is omitted, `osmosis` is used.
@@ -121,9 +134,9 @@ All scripts accept the same named parameters, and will auto-detect missing value
 ```
 
 ## Scripts Details
-- **make.sh**: Main build script. Detects Docker and delegates to the appropriate build method. Accepts all named parameters.
-- **src/clone.sh**: Clone the Osmosis repo at a given tag into the target directory. Usage: `src/clone.sh --tag <tag> --target-dir <dir>`
-- **src/patch.sh**: Apply the launcher patch to the Osmosis sources. Usage: `src/patch.sh --target-dir <dir>`
+- **make.sh**: Main build script. Supports the canonical named interface `./make.sh [--docker|--local] [--tag <tag>] [--os <os>] [--arch <arch>] [--target-dir <dir>]` plus limited positional compatibility.
+- **src/clone.sh**: Clone the Osmosis repo at a given tag into the target directory. Usage: `src/clone.sh [--force-reset] --tag <tag> --target-dir <dir>`.
+- **src/patch.sh**: Apply the launcher patch to the Osmosis sources. The patch is idempotent and fails if the expected injection point is missing. Usage: `src/patch.sh --target-dir <dir>`.
 - **src/make.sh**: Build the modified Osmosis sources locally (requires Go). Usage: `src/make.sh --os <os> --arch <arch> --target-dir <dir>`
 - **src/docker_make.sh**: Build the patched binary using Docker. Usage: `src/docker_make.sh --os <os> --arch <arch> --target-dir <dir>`
 - **src/build.sh**: Advanced build for different environments. Handles Go installation and cross-compilation. Usage: `src/build.sh --os <os> --arch <arch> --target-dir <dir>`
@@ -136,7 +149,7 @@ All scripts accept the same named parameters, and will auto-detect missing value
 - **src/validate_platform.sh**: Check if a platform combination is supported (uses `supported_platforms.json`).
 - **src/get_available_ram_gb.sh**: Detect available RAM for Docker builds.
 
-Test scripts are available in the `tests/` folder to validate each step.
+Test scripts are available in the `tests/` folder to validate each step, including fast regression coverage for argument parsing, patch verification, launcher stdin parsing, and root CLI delegation.
 
 ## Contributing
 Contributions are welcome! Please:
@@ -150,4 +163,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file.
 ---
 
 > Console messages and comments are in English to ensure international compatibility of logs and scripts.
-

@@ -1,12 +1,14 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/parse_args.sh" "$@"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PLATFORM="${GO_OS}/${GO_ARCH}"
 IMAGE_TAG="osmosis-builder-base-${GO_OS}-${GO_ARCH}"
-CONTAINER_NAME="osmosis-build-${GO_OS}-${GO_ARCH}"
+CONTAINER_NAME="osmosis-build-${GO_OS}-${GO_ARCH}-$$"
 
 # Vérifie que docker est disponible
 if ! command -v docker >/dev/null 2>&1; then
@@ -25,8 +27,10 @@ else
   echo "[INFO] Using standard Ubuntu image for Linux build"
 fi
 
+DOCKERFILE_PATH="$REPO_ROOT/$DOCKERFILE"
+
 # Build l'image de base (si elle n'existe pas déjà)
-docker build -f "$DOCKERFILE" -t "$IMAGE_TAG" .
+docker build -f "$DOCKERFILE_PATH" -t "$IMAGE_TAG" "$REPO_ROOT"
 
 # Vérifie si le conteneur existe déjà
 if docker ps -a --format '{{.Names}}' | grep -Fxq "$CONTAINER_NAME"; then
@@ -55,11 +59,11 @@ fi
 # Dossier cible pour le clone et le build (déjà géré par parse_args.sh)
 
 # For Darwin builds, we need special configuration to use static wasmvm library
-DARWIN_ENV=""
+DARWIN_ENV_ARGS=()
 if [ "$GO_OS" = "darwin" ]; then
   # Pass only the extra tag (static_wasm) to use libwasmvmstatic_darwin.a
   # Do NOT pass LINK_STATICALLY as macOS doesn't support full static linking
-  DARWIN_ENV="-e BUILD_TAGS=static_wasm"
+  DARWIN_ENV_ARGS=(-e BUILD_TAGS=static_wasm)
 fi
 
 # Lance le build cross-platform dans un conteneur nommé explicitement, sans --rm et sans volume disque
@@ -68,8 +72,8 @@ if [ "$USE_TMPFS" -eq 1 ]; then
     --name "$CONTAINER_NAME" \
     -e GOOS="$GO_OS" \
     -e GOARCH="$GO_ARCH" \
-    $DARWIN_ENV \
-    --tmpfs /workspace/$TARGET_DIR:rw,size=10g \
+    ${DARWIN_ENV_ARGS+"${DARWIN_ENV_ARGS[@]}"} \
+    --tmpfs "/workspace/$TARGET_DIR:rw,size=10g" \
     --entrypoint bash \
     "$IMAGE_TAG" \
     -c "make.sh --os '$GO_OS' --arch '$GO_ARCH' --target-dir '$TARGET_DIR'")
@@ -78,7 +82,7 @@ else
     --name "$CONTAINER_NAME" \
     -e GOOS="$GO_OS" \
     -e GOARCH="$GO_ARCH" \
-    $DARWIN_ENV \
+    ${DARWIN_ENV_ARGS+"${DARWIN_ENV_ARGS[@]}"} \
     --entrypoint bash \
     "$IMAGE_TAG" \
     -c "make.sh --os '$GO_OS' --arch '$GO_ARCH' --target-dir '$TARGET_DIR'")

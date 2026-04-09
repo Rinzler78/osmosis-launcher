@@ -1,12 +1,13 @@
 #!/bin/bash
 
+# shellcheck source=./utils.sh
 . "$(dirname "$0")/utils.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
 echo_title() {
-  bash $FORMAT_TITLE_SH "$(basename "$0")"
+  bash "$FORMAT_TITLE_SH" "$(basename "$0")"
 }
 
 trap echo_title EXIT

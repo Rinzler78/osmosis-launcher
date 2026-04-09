@@ -1,9 +1,14 @@
 #!/bin/bash
 # Build script specifically for Darwin (macOS) cross-compilation using OSXCross
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/parse_args.sh" "$@"
+
+GO_OS="${GO_OS:-}"
+GO_ARCH="${GO_ARCH:-}"
+TARGET_DIR="${TARGET_DIR:-}"
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "[FAIL] Directory $TARGET_DIR does not exist."
@@ -14,6 +19,8 @@ BUILD_DIR="."
 GO_VERSION_SH="$SCRIPT_DIR/retrieve_required_go_version.sh"
 VALIDATE_PLATFORM_SH="$SCRIPT_DIR/validate_platform.sh"
 DOWNLOAD_WASMVM_SH="$SCRIPT_DIR/download_wasmvm_darwin.sh"
+GO_TARBALL_PATH=""
+GO_EXTRACT_DIR=""
 
 # Validate that this is a darwin build
 if [ "$GO_OS" != "darwin" ]; then
@@ -29,10 +36,11 @@ fi
 
 # Backup the initial environment
 OLD_PATH="$PATH"
-OLD_GOROOT="$GOROOT"
+OLD_GOROOT="${GOROOT:-}"
+GO_INSTALLED_BEFORE=0
 
 # Detect the required Go version
-GO_VERSION=$($GO_VERSION_SH "$TARGET_DIR")
+GO_VERSION="$("$GO_VERSION_SH" "$TARGET_DIR")"
 if [ -z "$GO_VERSION" ]; then
   echo "[FAIL] Could not determine Go version for directory $TARGET_DIR."
   exit 1
@@ -55,9 +63,10 @@ fi
 if [[ "$INSTALLED_GO" != "$GO_VERSION"* ]]; then
   echo "[INFO] Installing Go $GO_VERSION ($GO_DL_OS/$GO_DL_ARCH)..."
   GO_TMP_DIR="/tmp/go-$GO_VERSION-$$"
-  GO_TARBALL_PATH=$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_DL_OS" "$GO_DL_ARCH" | tail -n1)
-  tar -C /tmp -xzf "$GO_TARBALL_PATH"
-  mv /tmp/go "$GO_TMP_DIR"
+  GO_EXTRACT_DIR="$(mktemp -d /tmp/go-extract-XXXXXX)"
+  GO_TARBALL_PATH="$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_DL_OS" "$GO_DL_ARCH" | tail -n1)"
+  tar -C "$GO_EXTRACT_DIR" -xzf "$GO_TARBALL_PATH"
+  mv "$GO_EXTRACT_DIR/go" "$GO_TMP_DIR"
   export GOROOT="$GO_TMP_DIR"
   export PATH="$GO_TMP_DIR/bin:$PATH"
   GO_INSTALLED_BEFORE=1
@@ -67,7 +76,10 @@ fi
 cleanup() {
   if [ "$GO_INSTALLED_BEFORE" = "1" ]; then
     echo "[CLEANUP] Deleting Go $GO_VERSION ($GO_TMP_DIR)."
-    rm -rf "$GO_TMP_DIR" "$GO_TMP_DIR.tar.gz"
+    rm -rf "$GO_TMP_DIR" "$GO_EXTRACT_DIR"
+    if [ -n "$GO_TARBALL_PATH" ]; then
+      rm -f "$GO_TARBALL_PATH"
+    fi
     export PATH="$OLD_PATH"
     export GOROOT="$OLD_GOROOT"
   fi
@@ -112,14 +124,18 @@ export CGO_LDFLAGS="-L/lib -mmacosx-version-min=10.12"
 # Set target platform
 export GOOS="$GO_OS"
 export GOARCH="$GO_ARCH"
+export GOTOOLCHAIN=local
 
 # Use default GOPROXY if not set
-if [ -z "$GOPROXY" ]; then
+if [ -z "${GOPROXY:-}" ]; then
   export GOPROXY="https://proxy.golang.org,direct"
+fi
+if [ -z "${GOSUMDB:-}" ]; then
+  export GOSUMDB="sum.golang.org"
 fi
 
 # Build osmosisd with darwin-specific configuration
-pushd "$TARGET_DIR"
+pushd "$TARGET_DIR" >/dev/null
 
 # Download dependencies
 echo "[INFO] Downloading Go dependencies..."
@@ -137,7 +153,7 @@ echo "[INFO] Compiling osmosisd binary for $GO_OS/$GO_ARCH with OSXCross..."
 
 # Use BUILD_TAGS from environment if provided (via docker_make.sh)
 # The Makefile already includes "netgo ledger" so we only add extra tags
-if [ -n "$BUILD_TAGS" ]; then
+if [ -n "${BUILD_TAGS:-}" ]; then
   # Extract only the extra tags not already in the Makefile (static_wasm)
   export build_tags="static_wasm"
   echo "[INFO] Using CC=$CC, CGO_ENABLED=1, build tags: netgo,ledger,static_wasm"
@@ -149,9 +165,9 @@ fi
 # Note: We use the existing Makefile but with modified environment
 make build
 
-popd
+popd >/dev/null
 
 # Copy the binary to the target directory
-cp "$TARGET_DIR/build/osmosisd" $BUILD_DIR
+cp "$TARGET_DIR/build/osmosisd" "$BUILD_DIR"
 
 echo "[OK] Darwin build completed successfully for $GO_OS/$GO_ARCH"

@@ -1,8 +1,14 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/parse_args.sh" "$@"
+
+TAG="${TAG:-}"
+GO_OS="${GO_OS:-}"
+GO_ARCH="${GO_ARCH:-}"
+TARGET_DIR="${TARGET_DIR:-}"
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "[FAIL] Directory $TARGET_DIR does not exist."
@@ -10,10 +16,11 @@ if [ ! -d "$TARGET_DIR" ]; then
 fi
 BUILD_DIR="."
 GO_VERSION_SH="$SCRIPT_DIR/retrieve_required_go_version.sh"
-SUPPORTED_PLATFORMS_JSON="$SCRIPT_DIR/../supported_platforms.json"
 VALIDATE_PLATFORM_SH="$SCRIPT_DIR/validate_platform.sh"
 RESOLVE_OS_SH="$SCRIPT_DIR/resolve_os.sh"
 RESOLVE_ARCH_SH="$SCRIPT_DIR/resolve_arch.sh"
+GO_TARBALL_PATH=""
+GO_EXTRACT_DIR=""
 
 # Détection OS/ARCH si non fournis
 if [ -z "$GO_OS" ]; then
@@ -45,10 +52,11 @@ fi
 
 # Backup the initial environment
 OLD_PATH="$PATH"
-OLD_GOROOT="$GOROOT"
+OLD_GOROOT="${GOROOT:-}"
+GO_INSTALLED_BEFORE=0
 
 # Detect the required Go version
-GO_VERSION=$($GO_VERSION_SH "$TARGET_DIR")
+GO_VERSION="$("$GO_VERSION_SH" "$TARGET_DIR")"
 if [ -z "$GO_VERSION" ]; then
   echo "[FAIL] Could not determine Go version for directory $TARGET_DIR."
   exit 1
@@ -69,10 +77,11 @@ fi
 if [[ "$INSTALLED_GO" != "$GO_VERSION"* ]]; then
   echo "[INFO] Installing Go $GO_VERSION ($GO_DL_OS/$GO_DL_ARCH)..."
   GO_TMP_DIR="/tmp/go-$GO_VERSION-$$"
+  GO_EXTRACT_DIR="$(mktemp -d /tmp/go-extract-XXXXXX)"
   # Download the archive via le dedicated script (toujours pour la plateforme du conteneur)
-  GO_TARBALL_PATH=$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_DL_OS" "$GO_DL_ARCH" | tail -n1)
-  tar -C /tmp -xzf "$GO_TARBALL_PATH"
-  mv /tmp/go "$GO_TMP_DIR"
+  GO_TARBALL_PATH="$("$SCRIPT_DIR/download_go_archive.sh" "$GO_VERSION" "$GO_DL_OS" "$GO_DL_ARCH" | tail -n1)"
+  tar -C "$GO_EXTRACT_DIR" -xzf "$GO_TARBALL_PATH"
+  mv "$GO_EXTRACT_DIR/go" "$GO_TMP_DIR"
   export GOROOT="$GO_TMP_DIR"
   export PATH="$GO_TMP_DIR/bin:$PATH"
   GO_INSTALLED_BEFORE=1
@@ -82,7 +91,10 @@ fi
 cleanup() {
   if [ "$GO_INSTALLED_BEFORE" = "1" ]; then
     echo "[CLEANUP] Deleting Go $GO_VERSION ($GO_TMP_DIR)."
-    rm -rf "$GO_TMP_DIR" "$GO_TMP_DIR.tar.gz"
+    rm -rf "$GO_TMP_DIR" "$GO_EXTRACT_DIR"
+    if [ -n "$GO_TARBALL_PATH" ]; then
+      rm -f "$GO_TARBALL_PATH"
+    fi
     export PATH="$OLD_PATH"
     export GOROOT="$OLD_GOROOT"
   fi
@@ -90,18 +102,22 @@ cleanup() {
 trap cleanup EXIT
 
 # Compile the binary pour la plateforme cible
-pushd "$TARGET_DIR"
+pushd "$TARGET_DIR" >/dev/null
 
 # Use default GOPROXY if not set, allows fallback to proxy.golang.org
-if [ -z "$GOPROXY" ]; then
+if [ -z "${GOPROXY:-}" ]; then
   export GOPROXY="https://proxy.golang.org,direct"
 fi
 
 export GOOS="$GO_OS"
 export GOARCH="$GO_ARCH"
+export GOTOOLCHAIN=local
 
 # Download dependencies first with proper error handling
 echo "[INFO] Downloading Go dependencies..."
+if [ -z "${GOSUMDB:-}" ]; then
+  export GOSUMDB="sum.golang.org"
+fi
 if ! go mod download 2>&1; then
   echo "[WARN] Initial download failed, attempting go mod tidy..."
   if ! go mod tidy 2>&1; then
@@ -114,7 +130,7 @@ fi
 
 echo "[INFO] Compiling osmosisd binary for $GO_OS/$GO_ARCH..."
 make build
-popd
+popd >/dev/null
 
 # Copy the binary to the target directory
-cp "$TARGET_DIR/build/osmosisd" $BUILD_DIR
+cp "$TARGET_DIR/build/osmosisd" "$BUILD_DIR"

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck source=./utils.sh
 . "$(dirname "$0")/utils.sh"
 # Test des scripts resolve_os.sh, resolve_arch.sh et validate_platform.sh
 
@@ -86,8 +87,7 @@ validate_cases=(
 )
 
 for case in "${validate_cases[@]}"; do
-  set -- $case
-  os="$1"; arch="$2"; expected_code="$3"; expected_msg="$4"
+  read -r os arch expected_code expected_msg <<< "$case"
   if [ "$expected_code" = "0" ]; then
     if bash "$VALIDATE_PLATFORM_SH" "$os" "$arch"; then
       pass "validate_platform.sh $os $arch (ok)"

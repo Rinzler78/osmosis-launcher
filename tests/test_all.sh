@@ -1,20 +1,19 @@
 #!/bin/bash
 
-# Run all test scripts in the current directory in order
-# Each test script output is prefixed by its name
+set -euo pipefail
 
-set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-for test_script in $(ls $SCRIPT_DIR/test_*.sh | sort); do
-  # Skip the current script
-  if [ "$test_script" = "$0" ] || [ "$(basename "$test_script")" = "$(basename "$0")" ]; then
+shopt -s nullglob
+for test_script in "$SCRIPT_DIR"/test_*.sh; do
+  if [[ "$test_script" = "$0" || "$(basename "$test_script")" = "$(basename "$0")" ]]; then
     continue
   fi
-  echo "\n==============================="
-  echo "Running $test_script"
-  echo "===============================\n"
+
+  printf '\n===============================\n'
+  printf 'Running %s\n' "$test_script"
+  printf '===============================\n\n'
   bash "$test_script"
 done
 
-echo "\nAll tests completed successfully." 
+printf '\nAll tests completed successfully.\n'

@@ -1,13 +1,14 @@
 #!/bin/bash
 set -e
 
+# shellcheck source=./utils.sh
 . "$(dirname "$0")/utils.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
 echo_title() {
-  bash $FORMAT_TITLE_SH "$(basename "$0")"
+  bash "$FORMAT_TITLE_SH" "$(basename "$0")"
 }
 
 echo_title
@@ -32,13 +33,10 @@ SUCCESS=0
 FAIL=0
 
 for entry in "${PLATFORMS[@]}"; do
-  set -- $entry
-  GO_OS=$1
-  GO_ARCH=$2
-  EXT=$3
+  read -r GO_OS GO_ARCH EXT <<< "$entry"
   SCRIPT_PATH="$SCRIPT_DIR/../src/download_go_archive.sh"
   echo "[INFO] Testing $GO_VERSION $GO_OS $GO_ARCH"
-  ARCHIVE_PATH=$($SCRIPT_PATH --go-version "$GO_VERSION" --os "$GO_OS" --arch "$GO_ARCH" | tail -n1)
+  ARCHIVE_PATH="$("$SCRIPT_PATH" --go-version "$GO_VERSION" --os "$GO_OS" --arch "$GO_ARCH" | tail -n1)"
   # Check the expected extension
   if [[ "$ARCHIVE_PATH" != *.$EXT ]]; then
     fail "$GO_VERSION $GO_OS $GO_ARCH: Wrong extension ($ARCHIVE_PATH, expected: $EXT)"

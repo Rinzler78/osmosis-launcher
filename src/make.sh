@@ -1,6 +1,8 @@
 #!/bin/bash
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/parse_args.sh" "$@"
 VALIDATE_PLATFORM_SH="$SCRIPT_DIR/validate_platform.sh"
 RESOLVE_OS_SH="$SCRIPT_DIR/resolve_os.sh"
@@ -30,13 +32,23 @@ fi
 # Automatic cleaning of the cloned folder at the end
 cleanup() {
   echo "[CLEANUP] Deleting $TARGET_DIR."
-  rm -rf "$TARGET_DIR"
+
+  if command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$TARGET_DIR"; then
+    if ! find "$TARGET_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; then
+      echo "[WARN] Could not delete contents of temporary mount '$TARGET_DIR'." >&2
+    fi
+    return
+  fi
+
+  if ! rm -rf "$TARGET_DIR"; then
+    echo "[WARN] Could not delete temporary directory '$TARGET_DIR'." >&2
+  fi
 }
 trap cleanup EXIT 
 
 # If TAG is not defined, we take the last tag
 if [ -z "$TAG" ]; then
-  TAG="$($SCRIPT_DIR/last_tag.sh)"
+  TAG="$("$SCRIPT_DIR/last_tag.sh")"
   echo "[INFO] No tag provided, using last tag: $TAG"
 else
   # Check if the tag exists
