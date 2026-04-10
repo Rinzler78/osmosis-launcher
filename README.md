@@ -151,6 +151,8 @@ All user-facing build scripts accept the same named parameters and auto-detect m
 
 Test scripts are available in the `tests/` folder to validate each step, including fast regression coverage for argument parsing, patch verification, launcher stdin parsing, and root CLI delegation.
 
+Heavy integration-style test scripts now isolate their temporary workspaces so they can run safely in parallel without sharing `tests/.tmp/`, default clone directories, or generated binaries.
+
 ## Contributing
 Contributions are welcome! Please:
 - Respect the script structure and naming conventions

@@ -43,12 +43,15 @@ The launcher project combines shell orchestration, Git operations, dynamic code 
 - Guarding destructive resets may slightly reduce convenience in local rebuild loops.
   - Mitigation: Allow explicit force behavior while making the default safer.
 
+- Increasing test isolation may change assumptions in scripts that previously relied on shared working directories.
+  - Mitigation: Use per-test temporary workspaces and keep assertions focused on produced artifacts rather than fixed relative paths.
+
 ## Migration Plan
 
 1. Define the canonical CLI contract and validation scenarios.
 2. Refactor root CLI and shared argument parsing with compatibility tests.
 3. Harden patching and launcher parsing with dedicated regression coverage.
-4. Update README and CI to reflect and enforce the new contract.
+4. Update README and CI to reflect and enforce the new contract, including isolated heavy-test execution.
 5. Run targeted tests, shellcheck, and OpenSpec validation before implementation approval.
 
 ## Open Questions
@@ -56,4 +59,3 @@ The launcher project combines shell orchestration, Git operations, dynamic code 
 - Should the root `make.sh` continue to support positional arguments once named arguments are fully implemented?
 - Should launcher stdin parsing follow shell quoting strictly, or should it switch to an explicit structured format in a later change?
 - Should `clone.sh` destructive reset behavior require an explicit `--force`, or is a loud warning sufficient for now?
-
