@@ -19,3 +19,12 @@ tests/.tmp/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Local assistant/runtime artifacts
+.claude/CLAUDE.md
+.claude/agents/
+.claude/commands/project/
+.claude/hooks/
+.claude/skills/
+.claude/worktrees/
+.serena/
