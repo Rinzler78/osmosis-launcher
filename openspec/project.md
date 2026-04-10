@@ -81,6 +81,8 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - `master`: Main production branch (stable releases)
 - `develop`: Development branch for ongoing work
 - Feature branches: Created from `develop`, merged back via PR
+- Linked worktrees for feature and hotfix work MUST be created under `.worktrees/` at the project root
+- `.claude/worktrees/` MUST NOT be used as the project worktree location
 
 **Commit Conventions:**
 - Clear, descriptive commit messages in English

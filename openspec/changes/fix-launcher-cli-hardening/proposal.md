@@ -17,7 +17,7 @@ These issues do not necessarily break the current test suite, but they increase 
 ## Impact
 
 - Affected specs: `launcher-build-workflow`
-- Affected code: [make.sh](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/make.sh), [src/parse_args.sh](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/src/parse_args.sh), [src/patch.sh](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/src/patch.sh), [src/launcher.go](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/src/launcher.go), [src/clone.sh](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/src/clone.sh), [tests/test_all.sh](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/tests/test_all.sh), [README.md](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/README.md), [.github/workflows/release.yml](/Users/bleclereperso/Projects/osmosis-launcher/.claude/worktrees/fix-launcher-hardening-plan/.github/workflows/release.yml)
+- Affected code: `make.sh`, `src/parse_args.sh`, `src/patch.sh`, `src/launcher.go`, related tests, and supporting documentation in the project root
 
 ## Validation Criteria
 
@@ -28,4 +28,3 @@ These issues do not necessarily break the current test suite, but they increase 
 - Path handling MUST support target directories containing spaces for patch and build-related flows that advertise arbitrary target directories.
 - The test suite MUST include explicit coverage for the hardened cases above.
 - CI MUST include at least one fast shell validation step before heavier network/build steps.
-
