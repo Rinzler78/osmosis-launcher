@@ -26,5 +26,5 @@ tests/.tmp/
 .claude/commands/project/
 .claude/hooks/
 .claude/skills/
-.claude/worktrees/
+.worktrees/
 .serena/
