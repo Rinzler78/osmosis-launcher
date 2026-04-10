@@ -47,7 +47,11 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
    ```console
 git clone https://github.com/Rinzler78/osmosis-launcher.git
 cd osmosis-launcher
-```
+   ```
+2. **Enable versioned Git hooks**
+   ```console
+   src/install_git_hooks.sh
+   ```
 
 ## Parameter Handling
 All user-facing shell scripts use named options by default. Shared option parsing is handled by `src/parse_args.sh`, which now rejects unknown options and missing values instead of silently ignoring them.
@@ -158,6 +162,9 @@ Contributions are welcome! Please:
 - Respect the script structure and naming conventions
 - Document your additions
 - Add tests if possible
+- Work from a linked worktree created under `.worktrees/` instead of committing directly on `master` or `develop`
+
+The repository ships a versioned `pre-commit` hook that blocks direct commits on protected branches. Enable it with `src/install_git_hooks.sh` after cloning.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file.

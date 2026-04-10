@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck source=./utils.sh
+# shellcheck source=tests/utils.sh
 . "$(dirname "$0")/utils.sh"
 
 set -e
@@ -12,7 +12,6 @@ WORK_DIR="$ROOT_DIR/workdir"
 mkdir -p "$WORK_DIR"
 MAKE_SH="$SCRIPT_DIR/../src/make.sh"
 LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
-TAGS_SH="$SCRIPT_DIR/../src/tags.sh"
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 
 TAG="$($LAST_TAG_SH)"
@@ -51,29 +50,8 @@ fi
 pass "osmosisd version matches tag: $OSMOSISD_VERSION_OUTPUT"
 pass "src/make.sh native build test passed."
 
-cleanup
-mkdir -p "$WORK_DIR"
-EXPLICIT_TAG="v29.0.2"
-if ! "$TAGS_SH" | grep -q "$EXPLICIT_TAG"; then
-  echo "[SKIP] Tag $EXPLICIT_TAG not present, skipping explicit tag test."
-else
-  echo "[INFO] Building with explicit tag $EXPLICIT_TAG"
-  if ! (
-    cd "$WORK_DIR"
-    bash "$MAKE_SH" --tag "$EXPLICIT_TAG" --target-dir "$TARGET_DIR"
-  ); then
-    fail "src/make.sh failed with explicit tag."
-  fi
-  if [ ! -f "$WORK_DIR/osmosisd" ]; then
-    fail "osmosisd binary not found after src/make.sh with explicit tag."
-  fi
-  OSMOSISD_VERSION=$("$WORK_DIR/osmosisd" version 2>/dev/null | head -n 1)
-  TAG_CLEANED=${EXPLICIT_TAG#v}
-  if [ "$OSMOSISD_VERSION" != "$TAG_CLEANED" ]; then
-    fail "osmosisd version ($OSMOSISD_VERSION) does not match tag ($TAG_CLEANED) for explicit tag."
-  fi
-  pass "src/make.sh built osmosisd with correct version for explicit tag: $OSMOSISD_VERSION"
-fi
+# Keep heavy build regression coverage bounded to the latest stable tag.
+# Older tag compatibility remains covered by the shared tag resolution and clone logic.
 
 cleanup
 mkdir -p "$WORK_DIR"

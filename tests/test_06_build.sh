@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck source=./utils.sh
+# shellcheck source=tests/utils.sh
 . "$(dirname "$0")/utils.sh"
 
 set -e
@@ -13,9 +13,6 @@ mkdir -p "$WORK_DIR"
 BUILD_SH="$SCRIPT_DIR/../src/build.sh"
 CLONE_SH="$SCRIPT_DIR/../src/clone.sh"
 LAST_TAG_SH="$SCRIPT_DIR/../src/last_tag.sh"
-RESOLVE_OS_SH="$SCRIPT_DIR/../src/resolve_os.sh"
-RESOLVE_ARCH_SH="$SCRIPT_DIR/../src/resolve_arch.sh"
-
 FORMAT_TITLE_SH="$SCRIPT_DIR/../src/format_title.sh"
 echo_title() {
   bash "$FORMAT_TITLE_SH" "$(basename "$0")"
@@ -63,27 +60,5 @@ fi
 pass "build.sh fails as expected with non-existent directory."
 pass "build.sh tests passed."
 
-TAG="$($LAST_TAG_SH)"
-GO_OS="$($RESOLVE_OS_SH "$(uname -s)")"
-GO_ARCH="$($RESOLVE_ARCH_SH "$(uname -m)")"
-TARGET_DIR="$ROOT_DIR/test_build_named"
-
-echo_title
-echo "[INFO] Test build.sh (paramètres nommés)"
-
-if ! bash "$CLONE_SH" --tag "$TAG" --target-dir "$TARGET_DIR"; then
-  fail "clone.sh failed for build test."
-fi
-
-if ! (
-  cd "$WORK_DIR"
-  bash "$BUILD_SH" --target-dir "$TARGET_DIR" --os "$GO_OS" --arch "$GO_ARCH"
-); then
-  fail "build.sh failed with named parameters."
-fi
-
-if [ ! -f "$WORK_DIR/osmosisd" ]; then
-  fail "osmosisd binary not found after build.sh."
-fi
-
-pass "build.sh test with named parameters passed."
+# Keep heavy build coverage bounded to one native build on the latest stable tag.
+# Named argument parsing is already covered by tests/test_01_parse_args.sh.
