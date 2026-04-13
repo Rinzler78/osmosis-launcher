@@ -24,6 +24,7 @@ Osmosis Launcher is a wrapper for [osmosis](https://github.com/osmosis-labs/osmo
 - [Quick Start](#quick-start)
 - [Build Process](#build-process)
 - [Scripts Details](#scripts-details)
+- [Changelog](CHANGELOG.md)
 - [Contributing](#contributing)
 - [License](#license)
 
